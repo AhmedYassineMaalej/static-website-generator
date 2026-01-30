@@ -1,5 +1,6 @@
 mod htmlnode;
 mod leafnode;
+mod properties;
 mod textnode;
 
 use textnode::TextNode;
