@@ -1,3 +1,10 @@
+mod textnode;
+
+use textnode::TextNode;
+
 fn main() {
-    println!("Hello, world!");
+    let node = TextNode::Link {
+        text: String::from("This is some text"),
+        url: String::from("https://personal-blog-two-gray.vercel.app"),
+    };
 }
