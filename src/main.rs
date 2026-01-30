@@ -1,3 +1,4 @@
+mod htmlnode;
 mod textnode;
 
 use textnode::TextNode;

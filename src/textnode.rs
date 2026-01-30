@@ -8,9 +8,11 @@ pub enum TextNode {
     Image { text: String, url: String },
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
     fn test_text_node_equal() {
         let node1 = TextNode::Bold {
             text: String::from("Hello World"),
@@ -21,4 +23,3 @@ mod tests {
         assert_eq!(node1, node2);
     }
 }
-
