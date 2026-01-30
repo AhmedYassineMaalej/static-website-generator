@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub type Properties = HashMap<String, String>;
 
-trait ToHtml {
+pub trait ToHtml {
     fn to_html(&self) -> String;
 }
 
