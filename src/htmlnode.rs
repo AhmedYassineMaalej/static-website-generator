@@ -20,8 +20,9 @@ where
 
         let props = self.props();
         let children = self.children();
-        let Some(value) = self.value() else {
-            unimplemented!();
+        let value = match self.value() {
+            Some(v) => v,
+            None => &String::new(),
         };
 
         match children {
@@ -47,7 +48,19 @@ impl<T: AsRef<dyn ToHtml>> ToHtml for &Vec<T> {
     fn to_html(&self) -> String {
         self.iter()
             .map(|node| node.as_ref().to_html())
-            .reduce(|a, b| a + " " + &b)
+            .reduce(|a, b| a + &b)
             .unwrap_or_default()
+    }
+}
+
+impl ToHtml for String {
+    fn to_html(&self) -> String {
+        self.clone()
+    }
+}
+
+impl ToHtml for &str {
+    fn to_html(&self) -> String {
+        String::from(*self)
     }
 }

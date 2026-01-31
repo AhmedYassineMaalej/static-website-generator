@@ -5,14 +5,18 @@ use crate::{
 
 #[derive(Debug)]
 pub struct LeafNode {
-    tag: String,
-    value: String,
-    props: Properties,
+    pub tag: String,
+    pub value: String,
+    pub props: Properties,
 }
 
 impl LeafNode {
-    pub fn new(tag: String, value: String, props: Properties) -> Self {
-        Self { tag, value, props }
+    pub fn new(tag: &str, value: &str) -> Self {
+        Self {
+            tag: String::from(tag),
+            value: String::from(value),
+            props: Properties::new(),
+        }
     }
 }
 
@@ -37,11 +41,7 @@ mod tests {
 
     #[test]
     fn test_paragraph() {
-        let node = LeafNode::new(
-            String::from("p"),
-            String::from("This is a paragraph of text."),
-            Properties::new(),
-        );
+        let node = LeafNode::new("p", "This is a paragraph of text.");
 
         assert_eq!(
             node.to_html(),
@@ -51,10 +51,9 @@ mod tests {
 
     #[test]
     fn test_link() {
-        let mut props = Properties::new();
-        props.insert(String::from("href"), String::from("https://www.google.com"));
-
-        let node = LeafNode::new(String::from("a"), String::from("Click me!"), props);
+        let mut node = LeafNode::new("a", "Click me!");
+        node.props
+            .insert(String::from("href"), String::from("https://www.google.com"));
 
         assert_eq!(
             node.to_html(),
