@@ -1,6 +1,9 @@
-use crate::{htmlnode::HTMLNode, properties::Properties};
+use crate::{
+    htmlnode::HTMLNode,
+    properties::{Properties, ToHtml},
+};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeafNode {
     tag: String,
     value: String,
@@ -8,32 +11,29 @@ pub struct LeafNode {
 }
 
 impl LeafNode {
-    fn new(tag: String, value: String, props: Properties) -> Self {
+    pub fn new(tag: String, value: String, props: Properties) -> Self {
         Self { tag, value, props }
     }
 }
 
 impl HTMLNode for LeafNode {
-    fn tag(&self) -> String {
-        self.tag.clone()
+    fn tag(&self) -> &String {
+        &self.tag
     }
 
-    fn props(&self) -> Properties {
-        self.props.clone()
+    fn props(&self) -> &Properties {
+        &self.props
     }
 
-    fn children(&self) -> Option<Vec<impl HTMLNode>> {
-        Option::<Vec<LeafNode>>::None
-    }
-
-    fn value(&self) -> Option<String> {
-        Some(self.value.clone())
+    fn value(&self) -> Option<&String> {
+        Some(&self.value)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::properties::ToHtml;
 
     #[test]
     fn test_paragraph() {

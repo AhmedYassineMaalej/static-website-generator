@@ -17,9 +17,11 @@ mod tests {
         let node1 = TextNode::Bold {
             text: String::from("Hello World"),
         };
+
         let node2 = TextNode::Bold {
             text: String::from("Hello World"),
         };
+
         assert_eq!(node1, node2);
     }
 }

@@ -1,5 +1,6 @@
 mod htmlnode;
 mod leafnode;
+mod parentnode;
 mod properties;
 mod textnode;
 
