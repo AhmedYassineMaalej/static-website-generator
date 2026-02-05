@@ -18,6 +18,11 @@ impl LeafNode {
             props: Properties::new(),
         }
     }
+
+    pub fn with_prop(mut self, key: String, value: String) -> Self {
+        self.props.insert(key, value);
+        self
+    }
 }
 
 impl HTMLNode for LeafNode {

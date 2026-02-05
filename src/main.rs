@@ -1,14 +1,11 @@
 mod htmlnode;
 mod leafnode;
 mod parentnode;
+mod parser;
 mod properties;
 mod textnode;
+mod tokenizer;
 
 use textnode::TextNode;
 
-fn main() {
-    let node = TextNode::Link {
-        text: String::from("This is some text"),
-        url: String::from("https://personal-blog-two-gray.vercel.app"),
-    };
-}
+fn main() {}

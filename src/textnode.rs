@@ -1,27 +1,52 @@
+use crate::{leafnode::LeafNode, parentnode::ParentNode, properties::ToHtml};
+
 #[derive(Debug, PartialEq)]
 pub enum TextNode {
-    Plain { text: String },
-    Bold { text: String },
-    Italic { text: String },
-    Code { text: String },
-    Link { text: String, url: String },
-    Image { text: String, url: String },
+    Plain(String),
+    Bold(Vec<TextNode>),
+    Italic(Vec<TextNode>),
+    Code(String),
+    Link(Link),
+    Image(Image),
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Debug, PartialEq)]
+pub struct Link {
+    text: String,
+    url: String,
+}
 
-    #[test]
-    fn test_text_node_equal() {
-        let node1 = TextNode::Bold {
-            text: String::from("Hello World"),
-        };
+#[derive(Debug, PartialEq)]
+pub struct Image {
+    text: String,
+    url: String,
+}
 
-        let node2 = TextNode::Bold {
-            text: String::from("Hello World"),
-        };
-
-        assert_eq!(node1, node2);
+impl TextNode {
+    pub fn to_html_node(self) -> Box<dyn ToHtml> {
+        match self {
+            TextNode::Plain(text) => Box::new(text),
+            TextNode::Bold(children) => Box::new(ParentNode::new(
+                "b",
+                children
+                    .into_iter()
+                    .map(|child| child.to_html_node())
+                    .collect(),
+            )),
+            TextNode::Italic(children) => Box::new(ParentNode::new(
+                "i",
+                children
+                    .into_iter()
+                    .map(|child| child.to_html_node())
+                    .collect(),
+            )),
+            TextNode::Code(code) => Box::new(LeafNode::new("code", &code)),
+            TextNode::Link(Link { text, url }) => {
+                Box::new(LeafNode::new("a", &text).with_prop(String::from("href"), url))
+            }
+            TextNode::Image(Image { text, url }) => {
+                Box::new(LeafNode::new("img", &text).with_prop(String::from("src"), url))
+            }
+        }
     }
 }
