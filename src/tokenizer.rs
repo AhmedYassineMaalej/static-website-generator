@@ -1,25 +1,19 @@
-#[derive(Debug, PartialEq)]
-pub struct Token {
-    pub lexeme: String,
-    pub ttype: TokenType,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum TokenType {
-    Text,
-    DoubleAsterisk,
-    Underscore,
-    Backtick,
-}
+use crate::token::{Token, TokenType};
 
 pub struct Tokenizer {
-    pub input: String,
-    pub current_token: String,
-    pub tokens: Vec<Token>,
+    input: String,
+    current_token: String,
+    tokens: Vec<Token>,
 }
 
 impl Tokenizer {
-    pub fn new(input: String) -> Self {
+    pub fn tokenize(input: String) -> Vec<Token> {
+        let mut tokenizer = Self::new(input);
+        tokenizer.process_input();
+        tokenizer.tokens
+    }
+
+    fn new(input: String) -> Self {
         Self {
             input,
             current_token: String::new(),
@@ -27,7 +21,7 @@ impl Tokenizer {
         }
     }
 
-    pub fn tokenize(&mut self) {
+    fn process_input(&mut self) {
         let input = self.input.clone();
         let mut chars = input.chars().peekable();
 
@@ -85,14 +79,9 @@ mod tests {
     fn test_text() {
         let input = String::from("Hello world");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
-            vec![Token {
-                lexeme: String::from("Hello world"),
-                ttype: TokenType::Text,
-            }]
+            Tokenizer::tokenize(input),
+            vec![Token::try_from("Hello world").unwrap()]
         )
     }
 
@@ -100,23 +89,12 @@ mod tests {
     fn test_surrounding_asterisks() {
         let input = String::from("**Hello world**");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("**"),
-                    ttype: TokenType::DoubleAsterisk,
-                },
-                Token {
-                    lexeme: String::from("Hello world"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("**"),
-                    ttype: TokenType::DoubleAsterisk,
-                },
+                Token::try_from("**").unwrap(),
+                Token::try_from("Hello world").unwrap(),
+                Token::try_from("**").unwrap(),
             ]
         )
     }
@@ -125,27 +103,13 @@ mod tests {
     fn test_middle_asterisks() {
         let input = String::from("**Hello**world");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("**"),
-                    ttype: TokenType::DoubleAsterisk,
-                },
-                Token {
-                    lexeme: String::from("Hello"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("**"),
-                    ttype: TokenType::DoubleAsterisk,
-                },
-                Token {
-                    lexeme: String::from("world"),
-                    ttype: TokenType::Text,
-                },
+                Token::try_from("**").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from("**").unwrap(),
+                Token::try_from("world").unwrap(),
             ]
         )
     }
@@ -154,23 +118,12 @@ mod tests {
     fn test_surrounding_underscores() {
         let input = String::from("_Hello world_");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
-                Token {
-                    lexeme: String::from("Hello world"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
+                Token::try_from("_").unwrap(),
+                Token::try_from("Hello world").unwrap(),
+                Token::try_from("_").unwrap(),
             ]
         )
     }
@@ -179,27 +132,13 @@ mod tests {
     fn test_middle_underscores() {
         let input = String::from("_Hello_world");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
-                Token {
-                    lexeme: String::from("Hello"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
-                Token {
-                    lexeme: String::from("world"),
-                    ttype: TokenType::Text,
-                },
+                Token::try_from("_").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from("_").unwrap(),
+                Token::try_from("world").unwrap(),
             ]
         )
     }
@@ -208,23 +147,12 @@ mod tests {
     fn test_surrounding_backticks() {
         let input = String::from("`Hello world`");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("`"),
-                    ttype: TokenType::Backtick,
-                },
-                Token {
-                    lexeme: String::from("Hello world"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("`"),
-                    ttype: TokenType::Backtick,
-                },
+                Token::try_from("`").unwrap(),
+                Token::try_from("Hello world").unwrap(),
+                Token::try_from("`").unwrap(),
             ]
         )
     }
@@ -233,27 +161,13 @@ mod tests {
     fn test_middle_backticks() {
         let input = String::from("`Hello`world");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("`"),
-                    ttype: TokenType::Backtick,
-                },
-                Token {
-                    lexeme: String::from("Hello"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("`"),
-                    ttype: TokenType::Backtick,
-                },
-                Token {
-                    lexeme: String::from("world"),
-                    ttype: TokenType::Text,
-                },
+                Token::try_from("`").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from("`").unwrap(),
+                Token::try_from("world").unwrap(),
             ]
         )
     }
@@ -262,31 +176,14 @@ mod tests {
     fn test_three_in_one() {
         let input = String::from("`_Hello**_");
 
-        let mut tokenizer = Tokenizer::new(input);
-        tokenizer.tokenize();
         assert_eq!(
-            tokenizer.tokens,
+            Tokenizer::tokenize(input),
             vec![
-                Token {
-                    lexeme: String::from("`"),
-                    ttype: TokenType::Backtick,
-                },
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
-                Token {
-                    lexeme: String::from("Hello"),
-                    ttype: TokenType::Text,
-                },
-                Token {
-                    lexeme: String::from("**"),
-                    ttype: TokenType::DoubleAsterisk,
-                },
-                Token {
-                    lexeme: String::from("_"),
-                    ttype: TokenType::Underscore,
-                },
+                Token::try_from("`").unwrap(),
+                Token::try_from("_").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from("**").unwrap(),
+                Token::try_from("_").unwrap(),
             ]
         )
     }

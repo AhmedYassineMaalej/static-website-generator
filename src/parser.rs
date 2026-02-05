@@ -1,6 +1,6 @@
 use crate::{
     textnode::TextNode,
-    tokenizer::{Token, TokenType},
+    token::{Token, TokenType},
 };
 
 pub struct Parser {
@@ -10,7 +10,13 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>) -> Self {
+    pub fn parse(tokens: Vec<Token>) -> Vec<TextNode> {
+        let mut parser = Self::new(tokens);
+        parser.process_tokens();
+        parser.nodes
+    }
+
+    fn new(tokens: Vec<Token>) -> Self {
         Self {
             tokens,
             nodes: Vec::new(),
@@ -18,7 +24,7 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) {
+    fn process_tokens(&mut self) {
         while self.position < self.tokens.len() {
             let token = &self.tokens[self.position];
             let parse_res = match token.ttype {
@@ -38,7 +44,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_bold(&mut self) -> Result<TextNode, Vec<TextNode>> {
+    fn parse_bold(&mut self) -> Result<TextNode, Vec<TextNode>> {
         assert_eq!(
             &self.tokens[self.position].ttype,
             &TokenType::DoubleAsterisk
@@ -54,7 +60,10 @@ impl Parser {
                     self.position += 1;
                     return Ok(TextNode::Bold(children));
                 }
-                TokenType::Text => children.push(TextNode::Plain(token.lexeme.clone())),
+                TokenType::Text => {
+                    children.push(TextNode::Plain(token.lexeme.clone()));
+                    self.position += 1;
+                }
                 TokenType::Underscore => match self.parse_italic() {
                     Ok(italic_node) => children.push(italic_node),
                     Err(nodes) => children.extend(nodes),
@@ -70,7 +79,7 @@ impl Parser {
         Err(children)
     }
 
-    pub fn parse_italic(&mut self) -> Result<TextNode, Vec<TextNode>> {
+    fn parse_italic(&mut self) -> Result<TextNode, Vec<TextNode>> {
         assert_eq!(&self.tokens[self.position].ttype, &TokenType::Underscore);
         self.position += 1;
 
@@ -83,7 +92,10 @@ impl Parser {
                     self.position += 1;
                     return Ok(TextNode::Italic(children));
                 }
-                TokenType::Text => children.push(TextNode::Plain(token.lexeme.clone())),
+                TokenType::Text => {
+                    children.push(TextNode::Plain(token.lexeme.clone()));
+                    self.position += 1;
+                }
                 TokenType::DoubleAsterisk => match self.parse_bold() {
                     Ok(bold_node) => children.push(bold_node),
                     Err(nodes) => children.extend(nodes),
@@ -99,7 +111,7 @@ impl Parser {
         Err(children)
     }
 
-    pub fn parse_code(&mut self) -> Result<TextNode, Vec<TextNode>> {
+    fn parse_code(&mut self) -> Result<TextNode, Vec<TextNode>> {
         assert_eq!(&self.tokens[self.position].ttype, &TokenType::Backtick);
 
         // find closing backtick
@@ -111,17 +123,23 @@ impl Parser {
             }
         }
 
+        // no closing backtick
         if idx.is_none() {
             let res = Ok(TextNode::Plain(self.tokens[self.position].lexeme.clone()));
             self.position += 1;
             return res;
         }
 
+        // found closing backtick
         let idx = idx.unwrap();
+        self.position += 1; // consume opening backtick
         let mut code = String::new();
-        for i in self.position + 1..idx {
+        for i in self.position..idx {
+            self.position += 1;
             code.push_str(&self.tokens[i].lexeme);
         }
+
+        self.position += 1; // consume closing backtick
 
         Ok(TextNode::Code(code))
     }
@@ -129,8 +147,55 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use crate::tokenizer::Tokenizer;
+
     use super::*;
 
     #[test]
-    fn test_plain() {}
+    fn test_plain() {
+        let input = String::from("Hello World");
+        let tokens = Tokenizer::tokenize(input);
+
+        assert_eq!(
+            Parser::parse(tokens),
+            vec![TextNode::Plain(String::from("Hello World"))]
+        )
+    }
+
+    #[test]
+    fn test_bold() {
+        let input = String::from("**Hello World**");
+        let tokens = Tokenizer::tokenize(input);
+
+        assert_eq!(
+            Parser::parse(tokens),
+            vec![TextNode::Bold(vec![TextNode::Plain(String::from(
+                "Hello World"
+            ))])]
+        )
+    }
+
+    #[test]
+    fn test_italic() {
+        let input = String::from("_Hello World_");
+        let tokens = Tokenizer::tokenize(input);
+
+        assert_eq!(
+            Parser::parse(tokens),
+            vec![TextNode::Italic(vec![TextNode::Plain(String::from(
+                "Hello World"
+            ))])]
+        )
+    }
+
+    #[test]
+    fn test_code() {
+        let input = String::from("`Hello World`");
+        let tokens = Tokenizer::tokenize(input);
+
+        assert_eq!(
+            Parser::parse(tokens),
+            vec![TextNode::Code(String::from("Hello World"))]
+        )
+    }
 }
