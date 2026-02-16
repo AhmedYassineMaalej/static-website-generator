@@ -7,11 +7,11 @@ use crate::{
 pub struct ParentNode {
     pub tag: String,
     pub props: Properties,
-    pub children: Vec<Box<dyn ToHtml>>,
+    pub children: Vec<Box<dyn HTMLNode>>,
 }
 
 impl ParentNode {
-    pub fn new(tag: &str, children: Vec<Box<dyn ToHtml>>) -> Self {
+    pub fn new(tag: &str, children: Vec<Box<dyn HTMLNode>>) -> Self {
         Self {
             tag: String::from(tag),
             props: Properties::new(),
@@ -21,15 +21,15 @@ impl ParentNode {
 }
 
 impl HTMLNode for ParentNode {
-    fn tag(&self) -> &String {
-        &self.tag
+    fn tag(&self) -> std::option::Option<&std::string::String> {
+        Some(&self.tag)
     }
 
     fn props(&self) -> &Properties {
         &self.props
     }
 
-    fn children(&self) -> Option<&Vec<Box<dyn ToHtml>>> {
+    fn children(&self) -> Option<&Vec<Box<dyn HTMLNode>>> {
         Some(&self.children)
     }
 }
@@ -42,11 +42,11 @@ mod tests {
 
     #[test]
     fn test_many_children() {
-        let children: Vec<Box<dyn ToHtml>> = vec![
+        let children: Vec<Box<dyn HTMLNode>> = vec![
             Box::new(LeafNode::new("b", "Bold text")),
-            Box::new("Normal text"),
+            Box::new("Normal text".to_string()),
             Box::new(LeafNode::new("i", "italic text")),
-            Box::new("Normal text"),
+            Box::new("Normal text".to_string()),
         ];
 
         let node = ParentNode::new("p", children);

@@ -1,12 +1,16 @@
 use crate::properties::{Properties, ToHtml};
 
+pub trait ToHTMLNode {
+    fn to_html_node(self) -> Box<dyn HTMLNode>;
+}
+
 pub trait HTMLNode {
-    fn tag(&self) -> &String;
+    fn tag(&self) -> Option<&String>;
     fn value(&self) -> Option<&String> {
         None
     }
     fn props(&self) -> &Properties;
-    fn children(&self) -> Option<&Vec<Box<dyn ToHtml>>> {
+    fn children(&self) -> Option<&Vec<Box<dyn HTMLNode>>> {
         None
     }
 }
@@ -16,7 +20,9 @@ where
     T: ?Sized + HTMLNode,
 {
     fn to_html(&self) -> String {
-        let tag = self.tag();
+        let Some(tag) = self.tag() else {
+            return self.value().unwrap().clone();
+        };
 
         let props = self.props();
         let children = self.children();
@@ -44,7 +50,7 @@ where
     }
 }
 
-impl<T: AsRef<dyn ToHtml>> ToHtml for &Vec<T> {
+impl<T: AsRef<dyn HTMLNode>> ToHtml for &Vec<T> {
     fn to_html(&self) -> String {
         self.iter()
             .map(|node| node.as_ref().to_html())
@@ -53,14 +59,16 @@ impl<T: AsRef<dyn ToHtml>> ToHtml for &Vec<T> {
     }
 }
 
-impl ToHtml for String {
-    fn to_html(&self) -> String {
-        self.clone()
+impl HTMLNode for String {
+    fn tag(&self) -> Option<&String> {
+        None
     }
-}
 
-impl ToHtml for &str {
-    fn to_html(&self) -> String {
-        String::from(*self)
+    fn value(&self) -> Option<&String> {
+        Some(self)
+    }
+
+    fn props(&self) -> &Properties {
+        todo!()
     }
 }

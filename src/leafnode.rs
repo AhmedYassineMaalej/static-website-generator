@@ -26,8 +26,8 @@ impl LeafNode {
 }
 
 impl HTMLNode for LeafNode {
-    fn tag(&self) -> &String {
-        &self.tag
+    fn tag(&self) -> Option<&String> {
+        Some(&self.tag)
     }
 
     fn props(&self) -> &Properties {

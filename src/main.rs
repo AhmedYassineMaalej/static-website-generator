@@ -1,21 +1,38 @@
+#![allow(unused)]
+
+mod emphasis;
+mod flow_content;
+mod heading;
 mod htmlnode;
+mod inline_code;
 mod leafnode;
+mod line_break;
+mod link;
+mod mdast;
 mod parentnode;
 mod parser;
+mod phrasing_content;
 mod properties;
+mod resource;
+mod strong;
+mod text;
 mod textnode;
 mod token;
 mod tokenizer;
 
-use textnode::TextNode;
+use std::{collections::VecDeque, fs};
 
-use crate::{parser::Parser, tokenizer::Tokenizer};
+use crate::{
+    htmlnode::ToHTMLNode, mdast::Root, parser::Parsable, properties::ToHtml, tokenizer::Tokenizer,
+};
 
 fn main() {
-    let input = String::from("`hello markdown`");
-    let tokens = Tokenizer::tokenize(input);
-    let nodes = Parser::parse(tokens);
-    let html = nodes.into_iter().next().unwrap().to_html_node().to_html();
+    let input = fs::read_to_string("input.md").unwrap();
+    let mut tokens = VecDeque::from_iter(Tokenizer::tokenize(input));
+    let md_tree = Root::parse(&mut tokens).unwrap();
+    println!("{:#?}", md_tree);
 
-    std::fs::write("public/index.html", html);
+    let html_tree = md_tree.to_html_node();
+
+    println!("{}", html_tree.to_html());
 }

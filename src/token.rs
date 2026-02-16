@@ -1,4 +1,4 @@
-pub const SPECIAL_CHARS: [char; 3] = ['*', '_', '`'];
+pub const SPECIAL_CHARS: [char; 4] = ['*', '_', '`', '#'];
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
@@ -6,6 +6,7 @@ pub enum TokenType {
     DoubleAsterisk,
     Underscore,
     Backtick,
+    Hashtag,
 }
 
 impl From<&str> for TokenType {
@@ -14,6 +15,7 @@ impl From<&str> for TokenType {
             "**" => Self::DoubleAsterisk,
             "_" => Self::Underscore,
             "`" => Self::Backtick,
+            "#" => Self::Hashtag,
             _ => Self::Text,
         }
     }
@@ -36,7 +38,7 @@ impl TryFrom<&str> for Token {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let ttype = TokenType::from(value);
 
-        if ttype == TokenType::Text && value.contains(&SPECIAL_CHARS) {
+        if ttype == TokenType::Text && value.contains(SPECIAL_CHARS) {
             return Err(TokenError::InvalidToken);
         }
 

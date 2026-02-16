@@ -54,6 +54,15 @@ impl Tokenizer {
                 continue;
             }
 
+            if char == '#' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("`"),
+                    ttype: TokenType::Backtick,
+                });
+                continue;
+            }
+
             self.current_token.push(char);
         }
 
