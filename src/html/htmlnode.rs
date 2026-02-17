@@ -1,4 +1,6 @@
-use super::{Body, Emphasis, Heading, InlineCode, Link, Properties, Strong, ToHtml};
+use super::{
+    Body, Code, Emphasis, Heading, InlineCode, Link, Paragraph, Properties, Strong, ToHtml,
+};
 
 pub trait ToHTMLNode {
     fn to_html_node(self) -> HTMLNode;
@@ -13,6 +15,8 @@ pub enum HTMLNode {
     InlineCode(InlineCode),
     Break,
     Link(Link),
+    Paragraph(Paragraph),
+    Code(Code),
 }
 
 impl ToHtml for HTMLNode {
@@ -26,6 +30,8 @@ impl ToHtml for HTMLNode {
             HTMLNode::InlineCode(inline_code) => inline_code.to_html(),
             HTMLNode::Body(body) => body.to_html(),
             HTMLNode::Link(link) => link.to_html(),
+            HTMLNode::Paragraph(paragraph) => paragraph.to_html(),
+            HTMLNode::Code(code) => code.to_html(),
         }
     }
 }

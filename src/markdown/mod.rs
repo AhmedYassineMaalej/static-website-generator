@@ -1,3 +1,4 @@
+mod code;
 mod emphasis;
 mod flow_content;
 mod heading;
@@ -11,6 +12,7 @@ mod resource;
 mod strong;
 mod text;
 
+pub use code::Code;
 pub use emphasis::Emphasis;
 pub use flow_content::FlowContent;
 pub use heading::Heading;

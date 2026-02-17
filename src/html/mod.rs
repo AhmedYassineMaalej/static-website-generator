@@ -1,17 +1,21 @@
 mod body;
+mod code;
 mod emphasis;
 mod heading;
 mod htmlnode;
 mod inline_code;
 mod link;
+mod paragraph;
 mod properties;
 mod strong;
 
 pub use body::*;
+pub use code::*;
 pub use emphasis::*;
 pub use heading::*;
 pub use htmlnode::*;
 pub use inline_code::*;
 pub use link::*;
+pub use paragraph::*;
 pub use properties::*;
 pub use strong::*;

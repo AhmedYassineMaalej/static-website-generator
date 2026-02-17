@@ -12,12 +12,14 @@ pub enum TokenType {
     Backtick,
     Hashtag,
     Space,
+    TripleBacktick,
     LineBreak,
 }
 
 impl From<&str> for TokenType {
     fn from(value: &str) -> Self {
         match value {
+            "```" => Self::TripleBacktick,
             "**" => Self::DoubleAsterisk,
             "_" => Self::Underscore,
             "`" => Self::Backtick,
