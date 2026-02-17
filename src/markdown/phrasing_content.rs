@@ -1,16 +1,10 @@
 use std::collections::VecDeque;
 
-use crate::{
-    emphasis::Emphasis,
-    htmlnode::{HTMLNode, ToHTMLNode},
-    inline_code::InlineCode,
-    leafnode::LeafNode,
-    line_break::LineBreak,
-    link::Link,
-    parser::Parsable,
-    strong::Strong,
-    token::Token,
-};
+use crate::html::{HTMLNode, ToHTMLNode};
+use crate::parser::Parsable;
+use crate::token::Token;
+
+use super::*;
 
 #[derive(Debug)]
 pub enum PhrasingContent {
@@ -40,6 +34,10 @@ impl Parsable for PhrasingContent {
             return Some(link.into());
         }
 
+        if let Some(line_break) = LineBreak::parse(tokens) {
+            return Some(line_break.into());
+        }
+
         Some(String::parse(tokens).unwrap().into())
     }
 }
@@ -57,14 +55,14 @@ impl Parsable for Vec<PhrasingContent> {
 }
 
 impl ToHTMLNode for PhrasingContent {
-    fn to_html_node(self) -> Box<dyn HTMLNode> {
+    fn to_html_node(self) -> HTMLNode {
         match self {
             PhrasingContent::LineBreak(line_break) => line_break.to_html_node(),
             PhrasingContent::Emphasis(emphasis) => emphasis.to_html_node(),
             PhrasingContent::InlineCode(inline_code) => inline_code.to_html_node(),
             PhrasingContent::Link(link) => link.to_html_node(),
             PhrasingContent::Strong(strong) => strong.to_html_node(),
-            PhrasingContent::Text(text) => Box::new(text),
+            PhrasingContent::Text(text) => HTMLNode::Text(text),
         }
     }
 }

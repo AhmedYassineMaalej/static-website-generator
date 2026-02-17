@@ -1,14 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::{
-    flow_content::FlowContent,
-    htmlnode::{HTMLNode, ToHTMLNode},
-    line_break::LineBreak,
-    parentnode::ParentNode,
-    parser::Parsable,
-    phrasing_content::PhrasingContent,
-    token::{Token, TokenType},
-};
+use super::{FlowContent, PhrasingContent};
+use crate::html::{self, HTMLNode, ToHTMLNode};
+use crate::parser::Parsable;
+use crate::token::{Token, TokenType};
 
 #[derive(Debug)]
 pub struct Heading {
@@ -64,7 +59,7 @@ impl From<Heading> for FlowContent {
 }
 
 impl ToHTMLNode for Heading {
-    fn to_html_node(self) -> Box<dyn HTMLNode> {
+    fn to_html_node(self) -> HTMLNode {
         let children = self
             .children
             .into_iter()
@@ -72,6 +67,9 @@ impl ToHTMLNode for Heading {
             .collect();
 
         let tag = format!("h{}", self.depth);
-        Box::new(ParentNode::new(&tag, children))
+        HTMLNode::Heading(html::Heading {
+            depth: self.depth,
+            children,
+        })
     }
 }

@@ -1,23 +1,23 @@
 use std::collections::VecDeque;
 
 use crate::{
-    htmlnode::{HTMLNode, ToHTMLNode},
-    parentnode::ParentNode,
+    html::{self, HTMLNode, ToHTMLNode},
     parser::Parsable,
-    phrasing_content::PhrasingContent,
     token::{Token, TokenType},
 };
 
+use super::PhrasingContent;
+
 #[derive(Debug)]
-pub struct Emphasis {
+pub struct Strong {
     children: Vec<PhrasingContent>,
 }
 
-impl Parsable for Emphasis {
+impl Parsable for Strong {
     fn parse(tokens: &mut VecDeque<Token>) -> Option<Self> {
-        let opening_underscore = &tokens[0];
+        let opening_asterisk = &tokens[0];
 
-        if opening_underscore.ttype != TokenType::Underscore {
+        if opening_asterisk.ttype != TokenType::DoubleAsterisk {
             return None;
         }
 
@@ -25,7 +25,7 @@ impl Parsable for Emphasis {
         let closing_idx = tokens
             .iter()
             .skip(1)
-            .position(|token| token.ttype == TokenType::Underscore)?
+            .position(|token| token.ttype == TokenType::DoubleAsterisk)?
             + 1;
 
         // consume opening token
@@ -42,20 +42,20 @@ impl Parsable for Emphasis {
     }
 }
 
-impl ToHTMLNode for Emphasis {
-    fn to_html_node(self) -> std::boxed::Box<(dyn HTMLNode + 'static)> {
+impl From<Strong> for PhrasingContent {
+    fn from(val: Strong) -> Self {
+        PhrasingContent::Strong(val)
+    }
+}
+
+impl ToHTMLNode for Strong {
+    fn to_html_node(self) -> HTMLNode {
         let children = self
             .children
             .into_iter()
             .map(|c| c.to_html_node())
             .collect();
 
-        Box::new(ParentNode::new("i", children))
-    }
-}
-
-impl From<Emphasis> for PhrasingContent {
-    fn from(val: Emphasis) -> Self {
-        PhrasingContent::Emphasis(val)
+        HTMLNode::Strong(html::Strong { children })
     }
 }

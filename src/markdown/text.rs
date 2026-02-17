@@ -1,12 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::{
-    htmlnode::{HTMLNode, ToHTMLNode},
-    leafnode::LeafNode,
-    parser::Parsable,
-    phrasing_content::PhrasingContent,
-    token::Token,
-};
+use super::PhrasingContent;
+use crate::html::{HTMLNode, ToHTMLNode};
+use crate::parser::Parsable;
+use crate::token::Token;
 
 impl Parsable for String {
     fn parse(tokens: &mut VecDeque<Token>) -> Option<Self> {
@@ -22,7 +19,7 @@ impl From<String> for PhrasingContent {
 }
 
 impl ToHTMLNode for String {
-    fn to_html_node(self) -> Box<dyn HTMLNode> {
-        Box::new(self)
+    fn to_html_node(self) -> HTMLNode {
+        HTMLNode::Text(self)
     }
 }

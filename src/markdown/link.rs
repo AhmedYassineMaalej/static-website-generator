@@ -1,14 +1,11 @@
 use std::collections::VecDeque;
 
-use crate::{
-    htmlnode::{HTMLNode, ToHTMLNode},
-    leafnode::LeafNode,
-    parentnode::ParentNode,
-    parser::Parsable,
-    phrasing_content::PhrasingContent,
-    resource::Resource,
-    token::{Token, TokenType},
-};
+use super::PhrasingContent;
+use super::Resource;
+use crate::html;
+use crate::html::{HTMLNode, ToHTMLNode};
+use crate::parser::Parsable;
+use crate::token::{Token, TokenType};
 
 #[derive(Debug)]
 pub struct Link {
@@ -78,16 +75,16 @@ impl From<Link> for PhrasingContent {
 }
 
 impl ToHTMLNode for Link {
-    fn to_html_node(self) -> Box<dyn HTMLNode> {
+    fn to_html_node(self) -> HTMLNode {
         let children = self
             .children
             .into_iter()
             .map(|child| child.to_html_node())
             .collect();
 
-        let mut node = ParentNode::new("a", children);
-        node.props.insert(String::from("href"), self.resource.url);
-
-        Box::new(node)
+        HTMLNode::Link(html::Link {
+            children,
+            url: self.resource.url,
+        })
     }
 }

@@ -1,12 +1,10 @@
 use std::collections::VecDeque;
 
-use crate::{
-    htmlnode::{HTMLNode, ToHTMLNode},
-    leafnode::LeafNode,
-    parser::Parsable,
-    phrasing_content::PhrasingContent,
-    token::{Token, TokenType},
-};
+use crate::html::{self, HTMLNode, ToHTMLNode};
+use crate::parser::Parsable;
+use crate::token::{Token, TokenType};
+
+use super::PhrasingContent;
 
 #[derive(Debug)]
 pub struct InlineCode {
@@ -50,7 +48,7 @@ impl From<InlineCode> for PhrasingContent {
 }
 
 impl ToHTMLNode for InlineCode {
-    fn to_html_node(self) -> Box<dyn HTMLNode> {
-        Box::new(LeafNode::new("p", &self.code))
+    fn to_html_node(self) -> HTMLNode {
+        HTMLNode::InlineCode(html::InlineCode { code: self.code })
     }
 }

@@ -15,6 +15,15 @@ impl ToHtml for Properties {
     }
 }
 
+impl<T> ToHtml for Vec<T>
+where
+    T: ToHtml,
+{
+    fn to_html(&self) -> String {
+        self.iter().map(|node| node.to_html()).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

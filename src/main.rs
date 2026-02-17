@@ -1,39 +1,31 @@
 #![allow(unused)]
 
-mod emphasis;
-mod flow_content;
-mod heading;
-mod htmlnode;
-mod inline_code;
-mod leafnode;
-mod line_break;
-mod link;
-mod mdast;
-mod parentnode;
+mod html;
+mod markdown;
 mod parser;
-mod phrasing_content;
-mod properties;
-mod resource;
-mod strong;
-mod text;
-mod textnode;
+mod renderer;
 mod token;
 mod tokenizer;
 
-use std::{collections::VecDeque, fs};
+use std::{collections::VecDeque, fs, time::Instant};
 
 use crate::{
-    htmlnode::ToHTMLNode, mdast::Root, parser::Parsable, properties::ToHtml, tokenizer::Tokenizer,
+    html::ToHTMLNode, markdown::Root, parser::Parsable, renderer::Renderer, tokenizer::Tokenizer,
 };
 
 fn main() {
+    let start = Instant::now();
     let input = fs::read_to_string("input.md").unwrap();
     let mut tokens = VecDeque::from_iter(Tokenizer::tokenize(input));
-    println!("{:#?}", tokens);
+    // dbg!(&tokens);
     let md_tree = Root::parse(&mut tokens).unwrap();
-    println!("{:#?}", md_tree);
+    // dbg!(&md_tree);
 
     let html_tree = md_tree.to_html_node();
+    let html = Renderer::render_page(html_tree);
+    fs::write("public/index.html", &html).unwrap();
+    let duration = start.elapsed();
 
-    println!("{}", html_tree.to_html());
+    println!("{}", html);
+    println!("took {duration:?}")
 }
