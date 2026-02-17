@@ -7,6 +7,6 @@ pub struct Code {
 
 impl ToHtml for Code {
     fn to_html(&self) -> String {
-        format!("<code>{}</code>", self.code)
+        format!("<pre><code>{}</code></pre>", self.code)
     }
 }

@@ -36,7 +36,11 @@ impl Parsable for Code {
         }
 
         tokens.pop_front(); // remove opening ticks
-        let code = tokens.drain(0..len).map(|token| token.lexeme).collect();
+        let code = tokens
+            .drain(0..len)
+            .skip(1) // skip line break
+            .map(|token| token.lexeme)
+            .collect();
         tokens.pop_front(); // remove closing ticks
         tokens.pop_front(); // remove linebreak
         Some(Code {
