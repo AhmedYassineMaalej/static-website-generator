@@ -36,6 +36,33 @@ impl Tokenizer {
                 continue;
             }
 
+            if char == '\n' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("\n"),
+                    ttype: TokenType::LineBreak,
+                });
+                continue;
+            }
+
+            if char == '#' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("#"),
+                    ttype: TokenType::Hashtag,
+                });
+                continue;
+            }
+
+            if char == ' ' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from(" "),
+                    ttype: TokenType::Space,
+                });
+                continue;
+            }
+
             if char == '_' {
                 self.finalize_text();
                 self.tokens.push(Token {

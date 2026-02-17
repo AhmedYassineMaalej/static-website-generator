@@ -7,6 +7,8 @@ pub enum TokenType {
     Underscore,
     Backtick,
     Hashtag,
+    Space,
+    LineBreak,
 }
 
 impl From<&str> for TokenType {

@@ -29,6 +29,7 @@ use crate::{
 fn main() {
     let input = fs::read_to_string("input.md").unwrap();
     let mut tokens = VecDeque::from_iter(Tokenizer::tokenize(input));
+    println!("{:#?}", tokens);
     let md_tree = Root::parse(&mut tokens).unwrap();
     println!("{:#?}", md_tree);
 

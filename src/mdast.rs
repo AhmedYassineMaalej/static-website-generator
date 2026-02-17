@@ -25,7 +25,7 @@ impl ToHTMLNode for MdAstContent {
     fn to_html_node(self) -> Box<dyn HTMLNode> {
         match self {
             MdAstContent::PhrasingContent(content) => content.to_html_node(),
-            MdAstContent::FlowContent(content) => todo!(),
+            MdAstContent::FlowContent(content) => content.to_html_node(),
         }
     }
 }
@@ -35,12 +35,12 @@ impl Parsable for Root {
         let mut children = Vec::new();
 
         while !tokens.is_empty() {
-            // if let Some(content) = FlowContent::parse(tokens) {
-            //     children.push(MdAstContent::FlowContent(content));
-            // } else {
-            let content = PhrasingContent::parse(tokens)?;
-            children.push(MdAstContent::PhrasingContent(content));
-            // }
+            if let Some(content) = FlowContent::parse(tokens) {
+                children.push(MdAstContent::FlowContent(content));
+            } else {
+                let content = PhrasingContent::parse(tokens)?;
+                children.push(MdAstContent::PhrasingContent(content));
+            }
         }
 
         Some(Self { children })

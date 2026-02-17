@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{heading::Heading, parser::Parsable, token::Token};
+use crate::{heading::Heading, htmlnode::ToHTMLNode, parser::Parsable, token::Token};
 
 #[derive(Debug)]
 pub enum FlowContent {
@@ -14,5 +14,13 @@ impl Parsable for FlowContent {
         }
 
         None
+    }
+}
+
+impl ToHTMLNode for FlowContent {
+    fn to_html_node(self) -> Box<dyn crate::htmlnode::HTMLNode> {
+        match self {
+            FlowContent::Heading(heading) => heading.to_html_node(),
+        }
     }
 }
