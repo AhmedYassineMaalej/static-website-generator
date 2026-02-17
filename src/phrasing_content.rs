@@ -36,6 +36,10 @@ impl Parsable for PhrasingContent {
             return Some(inline_code.into());
         }
 
+        if let Some(link) = Link::parse(tokens) {
+            return Some(link.into());
+        }
+
         Some(String::parse(tokens).unwrap().into())
     }
 }

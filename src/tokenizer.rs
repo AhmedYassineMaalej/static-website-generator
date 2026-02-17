@@ -35,6 +35,41 @@ impl Tokenizer {
                 });
                 continue;
             }
+            if char == '(' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("("),
+                    ttype: TokenType::OpenParenthesis,
+                });
+                continue;
+            }
+
+            if char == ')' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from(")"),
+                    ttype: TokenType::CloseParenthesis,
+                });
+                continue;
+            }
+
+            if char == ']' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("]"),
+                    ttype: TokenType::CloseBracket,
+                });
+                continue;
+            }
+
+            if char == '[' {
+                self.finalize_text();
+                self.tokens.push(Token {
+                    lexeme: String::from("["),
+                    ttype: TokenType::OpenBracket,
+                });
+                continue;
+            }
 
             if char == '\n' {
                 self.finalize_text();
@@ -117,7 +152,11 @@ mod tests {
 
         assert_eq!(
             Tokenizer::tokenize(input),
-            vec![Token::try_from("Hello world").unwrap()]
+            vec![
+                Token::try_from("Hello").unwrap(),
+                Token::try_from(" ").unwrap(),
+                Token::try_from("world").unwrap(),
+            ]
         )
     }
 
@@ -129,7 +168,9 @@ mod tests {
             Tokenizer::tokenize(input),
             vec![
                 Token::try_from("**").unwrap(),
-                Token::try_from("Hello world").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from(" ").unwrap(),
+                Token::try_from("world").unwrap(),
                 Token::try_from("**").unwrap(),
             ]
         )
@@ -158,7 +199,9 @@ mod tests {
             Tokenizer::tokenize(input),
             vec![
                 Token::try_from("_").unwrap(),
-                Token::try_from("Hello world").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from(" ").unwrap(),
+                Token::try_from("world").unwrap(),
                 Token::try_from("_").unwrap(),
             ]
         )
@@ -187,7 +230,9 @@ mod tests {
             Tokenizer::tokenize(input),
             vec![
                 Token::try_from("`").unwrap(),
-                Token::try_from("Hello world").unwrap(),
+                Token::try_from("Hello").unwrap(),
+                Token::try_from(" ").unwrap(),
+                Token::try_from("world").unwrap(),
                 Token::try_from("`").unwrap(),
             ]
         )

@@ -1,9 +1,13 @@
-pub const SPECIAL_CHARS: [char; 4] = ['*', '_', '`', '#'];
+pub const SPECIAL_CHARS: [char; 9] = ['*', '_', '`', '#', ' ', '[', ']', '(', ')'];
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
     Text,
     DoubleAsterisk,
+    OpenBracket,
+    CloseBracket,
+    OpenParenthesis,
+    CloseParenthesis,
     Underscore,
     Backtick,
     Hashtag,
@@ -18,6 +22,7 @@ impl From<&str> for TokenType {
             "_" => Self::Underscore,
             "`" => Self::Backtick,
             "#" => Self::Hashtag,
+            " " => Self::Space,
             _ => Self::Text,
         }
     }
