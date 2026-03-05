@@ -1,22 +1,11 @@
 use std::{
-    collections::HashMap,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
-use markdown::ParseOptions;
-use tokio::{
-    fs,
-    sync::{
-        RwLock, broadcast,
-        mpsc::{UnboundedSender, unbounded_channel},
-    },
-};
-use tracing::info;
+use tokio::{fs, sync::RwLock};
 
-use crate::{
-    ClientEvent, UpdateEvent, article::Article, article_state::ArticleState, config::Config,
-};
+use crate::{article_state::ArticleState, config::Config};
 
 pub struct ProjectState {
     pub config: Config,
@@ -66,6 +55,8 @@ impl Template {
                 javascript = Some(path);
                 continue;
             }
+
+            panic!("unknown file: {}", path.display());
         }
 
         Self::new(
@@ -90,8 +81,8 @@ impl Template {
 
 impl ProjectState {
     pub async fn new(config: Config) -> Self {
-        let template = Template::from_directory(&config.directories.template_directory).await;
-        let mut article_directory = tokio::fs::read_dir(&config.directories.article_directory)
+        let template = Template::from_directory(&config.directories.template).await;
+        let mut article_directory = tokio::fs::read_dir(&config.directories.article)
             .await
             .unwrap();
 

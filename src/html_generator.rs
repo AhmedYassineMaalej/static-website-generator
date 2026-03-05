@@ -1,9 +1,10 @@
 use build_html::{HtmlChild, HtmlElement, HtmlTag};
 use markdown::{
-    ParseOptions,
     mdast::{Node, Root},
     unist::Point,
 };
+use tree_sitter::Parser;
+use tree_sitter_highlight::{Highlight, HighlightConfiguration, Highlighter, HtmlRenderer};
 
 use crate::visitor::{MarkdownNode, MarkdownVisitor};
 
@@ -58,108 +59,108 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         element.into()
     }
 
-    fn visit_blockquote(&mut self, blockquote: &markdown::mdast::Blockquote) -> HtmlChild {
+    fn visit_blockquote(&mut self, _blockquote: &markdown::mdast::Blockquote) -> HtmlChild {
         todo!()
     }
 
     fn visit_footnote_definition(
         &mut self,
-        footnote_definition: &markdown::mdast::FootnoteDefinition,
+        _footnote_definition: &markdown::mdast::FootnoteDefinition,
     ) -> HtmlChild {
         todo!()
     }
 
     fn visit_mdx_jsx_flow_element(
         &mut self,
-        mdx_jsx_flow_element: &markdown::mdast::MdxJsxFlowElement,
+        _mdx_jsx_flow_element: &markdown::mdast::MdxJsxFlowElement,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_list(&mut self, list: &markdown::mdast::List) -> HtmlChild {
+    fn visit_list(&mut self, _list: &markdown::mdast::List) -> HtmlChild {
         todo!()
     }
 
-    fn visit_mdxjs_esm(&mut self, mdxjs_esm: &markdown::mdast::MdxjsEsm) -> HtmlChild {
+    fn visit_mdxjs_esm(&mut self, _mdxjs_esm: &markdown::mdast::MdxjsEsm) -> HtmlChild {
         todo!()
     }
 
-    fn visit_toml(&mut self, toml: &markdown::mdast::Toml) -> HtmlChild {
+    fn visit_toml(&mut self, _toml: &markdown::mdast::Toml) -> HtmlChild {
         todo!()
     }
 
-    fn visit_yaml(&mut self, yaml: &markdown::mdast::Yaml) -> HtmlChild {
+    fn visit_yaml(&mut self, _yaml: &markdown::mdast::Yaml) -> HtmlChild {
         todo!()
     }
 
-    fn visit_break(&mut self, break_: &markdown::mdast::Break) -> HtmlChild {
+    fn visit_break(&mut self, _break_: &markdown::mdast::Break) -> HtmlChild {
         todo!()
     }
 
-    fn visit_inline_code(&mut self, inline_code: &markdown::mdast::InlineCode) -> HtmlChild {
+    fn visit_inline_code(&mut self, _inline_code: &markdown::mdast::InlineCode) -> HtmlChild {
         todo!()
     }
 
-    fn visit_inline_math(&mut self, inline_math: &markdown::mdast::InlineMath) -> HtmlChild {
+    fn visit_inline_math(&mut self, _inline_math: &markdown::mdast::InlineMath) -> HtmlChild {
         todo!()
     }
 
-    fn visit_delete(&mut self, delete: &markdown::mdast::Delete) -> HtmlChild {
+    fn visit_delete(&mut self, _delete: &markdown::mdast::Delete) -> HtmlChild {
         todo!()
     }
 
-    fn visit_emphasis(&mut self, emphasis: &markdown::mdast::Emphasis) -> HtmlChild {
+    fn visit_emphasis(&mut self, _emphasis: &markdown::mdast::Emphasis) -> HtmlChild {
         todo!()
     }
 
     fn visit_mdx_text_expression(
         &mut self,
-        mdx_text_expression: &markdown::mdast::MdxTextExpression,
+        _mdx_text_expression: &markdown::mdast::MdxTextExpression,
     ) -> HtmlChild {
         todo!()
     }
 
     fn visit_footnote_reference(
         &mut self,
-        footnote_reference: &markdown::mdast::FootnoteReference,
+        _footnote_reference: &markdown::mdast::FootnoteReference,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_html(&mut self, html: &markdown::mdast::Html) -> HtmlChild {
+    fn visit_html(&mut self, _html: &markdown::mdast::Html) -> HtmlChild {
         todo!()
     }
 
-    fn visit_image(&mut self, image: &markdown::mdast::Image) -> HtmlChild {
+    fn visit_image(&mut self, _image: &markdown::mdast::Image) -> HtmlChild {
         todo!()
     }
 
     fn visit_image_reference(
         &mut self,
-        image_reference: &markdown::mdast::ImageReference,
+        _image_reference: &markdown::mdast::ImageReference,
     ) -> HtmlChild {
         todo!()
     }
 
     fn visit_mdx_jsx_text_element(
         &mut self,
-        mdx_jsx_text_element: &markdown::mdast::MdxJsxTextElement,
+        _mdx_jsx_text_element: &markdown::mdast::MdxJsxTextElement,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_link(&mut self, link: &markdown::mdast::Link) -> HtmlChild {
+    fn visit_link(&mut self, _link: &markdown::mdast::Link) -> HtmlChild {
         todo!()
     }
 
     fn visit_link_reference(
         &mut self,
-        link_reference: &markdown::mdast::LinkReference,
+        _link_reference: &markdown::mdast::LinkReference,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_strong(&mut self, strong: &markdown::mdast::Strong) -> HtmlChild {
+    fn visit_strong(&mut self, _strong: &markdown::mdast::Strong) -> HtmlChild {
         todo!()
     }
 
@@ -190,44 +191,88 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
     }
 
     fn visit_code(&mut self, code: &markdown::mdast::Code) -> HtmlChild {
-        todo!()
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+
+        let code = code.value.clone();
+
+        let mut highlighter = Highlighter::new();
+        let rust_lang = tree_sitter_rust::LANGUAGE.into();
+        let mut rust_config = HighlightConfiguration::new(
+            rust_lang,
+            "rust",
+            tree_sitter_rust::HIGHLIGHTS_QUERY,
+            tree_sitter_rust::INJECTIONS_QUERY,
+            tree_sitter_rust::TAGS_QUERY,
+        )
+        .unwrap();
+
+        let types = [
+            "function",
+            "keyword",
+            "string",
+            "variable",
+            "constant.builtin",
+            "type.builtin",
+            "type",
+        ];
+
+        rust_config.configure(&types);
+        let highlights = highlighter
+            .highlight(&rust_config, code.as_bytes(), None, |_| None)
+            .unwrap();
+
+        let mut html_renderer = HtmlRenderer::new();
+        html_renderer
+            .render(highlights, code.as_bytes(), &|Highlight(x), b| {
+                b.extend(format!("class={:?}", &types[x]).as_bytes().to_vec());
+            })
+            .unwrap();
+
+        let html = html_renderer.lines().collect::<String>();
+        dbg!(&html);
+        HtmlElement::new(HtmlTag::PreformattedText)
+            .with_child(html.into())
+            .into()
     }
 
-    fn visit_math(&mut self, math: &markdown::mdast::Math) -> HtmlChild {
+    fn visit_math(&mut self, _math: &markdown::mdast::Math) -> HtmlChild {
         todo!()
     }
 
     fn visit_mdx_flow_expression(
         &mut self,
-        mdx_flow_expression: &markdown::mdast::MdxFlowExpression,
+        _mdx_flow_expression: &markdown::mdast::MdxFlowExpression,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_table(&mut self, table: &markdown::mdast::Table) -> HtmlChild {
+    fn visit_table(&mut self, _table: &markdown::mdast::Table) -> HtmlChild {
         todo!()
     }
 
     fn visit_thematic_break(
         &mut self,
-        thematic_break: &markdown::mdast::ThematicBreak,
+        _thematic_break: &markdown::mdast::ThematicBreak,
     ) -> HtmlChild {
         todo!()
     }
 
-    fn visit_table_row(&mut self, table_row: &markdown::mdast::TableRow) -> HtmlChild {
+    fn visit_table_row(&mut self, _table_row: &markdown::mdast::TableRow) -> HtmlChild {
         todo!()
     }
 
-    fn visit_table_cell(&mut self, table_cell: &markdown::mdast::TableCell) -> HtmlChild {
+    fn visit_table_cell(&mut self, _table_cell: &markdown::mdast::TableCell) -> HtmlChild {
         todo!()
     }
 
-    fn visit_list_item(&mut self, list_item: &markdown::mdast::ListItem) -> HtmlChild {
+    fn visit_list_item(&mut self, _list_item: &markdown::mdast::ListItem) -> HtmlChild {
         todo!()
     }
 
-    fn visit_definition(&mut self, definition: &markdown::mdast::Definition) -> HtmlChild {
+    fn visit_definition(&mut self, _definition: &markdown::mdast::Definition) -> HtmlChild {
         todo!()
     }
 
@@ -298,13 +343,41 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
 }
 
 #[test]
-fn test_html() {
-    let input = std::fs::read_to_string("input.md").unwrap();
-    let ast = markdown::to_mdast(&input, &ParseOptions::default()).unwrap();
-    let html_generator = HtmlGenerator::new();
-    let html = html_generator.generate_html(&ast);
-    dbg!(&html);
+fn test_syntax_highlighting() {
+    let code = String::from("fn main() { println!(\"hello world\"); }");
 
-    assert_eq!(html, markdown::to_html(&input).replace('\n', ""));
+    // for highlight in highlights {
+    //     println!("{:?}", highlight.unwrap());
+    // }
+
+    //
+    // let mut parser = Parser::new();
+    // parser
+    //     .set_language(&tree_sitter_rust::LANGUAGE.into())
+    //     .unwrap();
+    //
+    // let tree = parser.parse(&code, None).unwrap();
+    // let mut cursor = tree.walk();
+    //
+    // 'outer: loop {
+    //     let node = cursor.node();
+    //     let node_type = node.kind();
+    //     let start = node.start_position();
+    //     let end = node.end_position();
+    //     println!("Node: {}, Range: {:?} - {:?}", node_type, start, end);
+    //
+    //     if cursor.goto_first_child() {
+    //         continue;
+    //     }
+    //
+    //     if cursor.goto_next_sibling() {
+    //         continue;
+    //     }
+    //
+    //     while !cursor.goto_next_sibling() {
+    //         if !cursor.goto_parent() {
+    //             break 'outer;
+    //         }
+    //     }
+    // }
 }
-

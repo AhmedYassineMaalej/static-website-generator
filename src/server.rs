@@ -7,7 +7,6 @@ use tokio::{
     },
     task,
 };
-use tracing::info;
 
 use crate::{ClientEvent, UpdateEvent, app_state::ProjectState};
 
@@ -51,12 +50,16 @@ impl Server {
         match event {
             UpdateEvent::Markdown => {
                 self.state.update_markdown().await;
-                self.broadcast_sender.send(ClientEvent::ReloadArticle);
+                self.broadcast_sender
+                    .send(ClientEvent::ReloadArticle)
+                    .unwrap();
             }
             UpdateEvent::Html => todo!(),
-            UpdateEvent::Css => todo!(),
+            UpdateEvent::Css => {
+                //  add anything here to be done before sending css
+                self.broadcast_sender.send(ClientEvent::ReloadCss).unwrap();
+            }
             UpdateEvent::Javascript => todo!(),
         }
     }
 }
-

@@ -13,12 +13,45 @@ body {
     grid-area: index;
 }
 
-
-
-span.word {
-    word-wrap: normal;
-    display: inline-block;
+pre {
+    background: #1e1e2e;
+    padding: 1em;
+    border-radius: 1em;
+    font-family: Iosevka Term Medium;
+    color: #cdd6f4;
+    box-shadow: 0.5em 0.5em 5px;
+    margin-right: 2em;
 }
+
+span.keyword {
+    color: #cba6f7;
+}
+
+span.type\.builtin {
+    color: #cba6f7;
+}
+
+
+span.type {
+    color: #f9e2af;
+}
+
+span.string {
+    color: #a6e3a1;
+}
+
+span.function {
+    color: #89b4fa;
+}
+
+span.function\.macro {
+    color: #cba6f7;
+}
+
+span.constant\.builtin {
+    color: #fab387;
+}
+
 
 span.word:hover {
     color: darkorange;

@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+
 mod app_state;
 mod article;
 mod article_state;
@@ -18,9 +19,8 @@ use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::fs;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use tracing::info;
@@ -41,24 +41,24 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
     let config = Config::new(ProjectDirectories::new(
-        PathBuf::from(ARTICLES_DIR),
-        PathBuf::from(PUBLIC_DIR),
-        PathBuf::from(TEMPLATE_DIR),
+        &PathBuf::from(ARTICLES_DIR),
+        &PathBuf::from(PUBLIC_DIR),
+        &PathBuf::from(TEMPLATE_DIR),
     ));
 
-    let (update_sender, rx) = broadcast::channel(10);
+    let (update_sender, _rx) = broadcast::channel(10);
 
     let watcher = FileWatcher::new(config.directories.clone());
     info!("file watcher is ready");
 
     let state = Arc::new(ProjectState::new(config).await);
     let server = Server::new(state.clone(), update_sender.clone());
-    let (server_task, server_handle) = server.run();
+    let (_server_task, server_handle) = server.run();
 
     tokio::spawn(watcher.watch(server_handle.clone()));
     info!("started watching files");
 
-    let mut cloned_state = state.clone();
+    let cloned_state = state.clone();
     let server_thread = tokio::spawn(async {
         let app = Router::new()
             .route("/", get(root))
@@ -87,7 +87,7 @@ async fn main() {
 
     child.wait().await.unwrap();
 
-    server_thread.await;
+    server_thread.await.unwrap();
 }
 
 #[derive(Debug, Serialize)]

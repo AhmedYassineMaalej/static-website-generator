@@ -1,21 +1,10 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
-
 use notify::{
     Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind,
 };
 
-use tokio::sync::{
-    broadcast,
-    mpsc::{self, UnboundedReceiver, UnboundedSender},
-};
-use tracing::info;
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
-use crate::{
-    UpdateEvent, app_state::ProjectState, config::ProjectDirectories, server::ServerEvent,
-};
+use crate::{config::ProjectDirectories, server::ServerEvent};
 
 pub struct FileWatcher {
     watcher: RecommendedWatcher,
@@ -36,15 +25,15 @@ impl FileWatcher {
         .unwrap();
 
         watcher
-            .watch(&dirs.public_directory, RecursiveMode::NonRecursive)
+            .watch(&dirs.public, RecursiveMode::NonRecursive)
             .unwrap();
 
         watcher
-            .watch(&dirs.article_directory, RecursiveMode::Recursive)
+            .watch(&dirs.article, RecursiveMode::Recursive)
             .unwrap();
 
         watcher
-            .watch(&dirs.template_directory, RecursiveMode::NonRecursive)
+            .watch(&dirs.template, RecursiveMode::NonRecursive)
             .unwrap();
 
         FileWatcher {
@@ -63,10 +52,9 @@ impl FileWatcher {
             };
 
             for path in paths.into_iter().flat_map(|p| p.canonicalize()) {
-                dbg!(&path);
                 if let Some(update) = self.directories.process_change(&path) {
-                    server_handle.send(ServerEvent::Update(update));
-                };
+                    server_handle.send(ServerEvent::Update(update)).unwrap();
+                }
             }
         }
     }

@@ -4,22 +4,14 @@ use futures_util::{
     SinkExt, StreamExt,
     stream::{SplitSink, SplitStream},
 };
-use tokio::{
-    net::TcpStream,
-    sync::{RwLock, broadcast},
-};
+use tokio::{net::TcpStream, sync::broadcast};
 use tokio_tungstenite::{
     WebSocketStream, accept_async,
-    tungstenite::{Error, Message, Utf8Bytes},
+    tungstenite::{Error, Message},
 };
 use tracing::info;
 
-use crate::{
-    ClientEvent, Update, UpdateEvent,
-    app_state::{ProjectState, Template},
-    article::Article,
-    article_state::ArticleState,
-};
+use crate::{ClientEvent, Update, UpdateEvent, app_state::ProjectState};
 
 pub struct Connection {
     ws_read: SplitStream<WebSocketStream<TcpStream>>,
@@ -40,11 +32,11 @@ impl Connection {
         let (ws_write, ws_read) = websocket.split();
 
         Self {
+            ws_read,
+            ws_write,
             addr,
             state,
             event_rx,
-            ws_write,
-            ws_read,
         }
     }
 

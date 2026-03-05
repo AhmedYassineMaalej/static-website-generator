@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use markdown::ParseOptions;
-use tokio::{fs, net::TcpListener};
+use tokio::fs;
 
 use crate::article::Article;
 
@@ -9,17 +9,14 @@ pub struct ArticleState {
     pub path: PathBuf,
     pub article: Article,
     pub html: String,
-    pub server: TcpListener,
 }
 
 impl ArticleState {
-    pub async fn new(article: Article, path: PathBuf) -> Self {
-        let server = TcpListener::bind("127.0.0.0:0").await.unwrap();
+    pub fn new(article: Article, path: PathBuf) -> Self {
         Self {
             html: article.html(),
             path,
             article,
-            server,
         }
     }
 
@@ -28,7 +25,7 @@ impl ArticleState {
 
         let mdast = markdown::to_mdast(&markdown, &ParseOptions::default()).unwrap();
         let article = Article::new(mdast);
-        Self::new(article, path.to_path_buf()).await
+        Self::new(article, path.to_path_buf())
     }
 
     pub async fn update(&mut self) {

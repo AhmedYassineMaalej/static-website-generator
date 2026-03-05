@@ -1,4 +1,4 @@
-use markdown::mdast::{Heading, Node, Root, Text};
+use markdown::mdast::{Heading, Root, Text};
 
 use crate::visitor::{MarkdownNode, MarkdownVisitor};
 
@@ -32,102 +32,102 @@ impl MarkdownVisitor<()> for TextExtractor {
         }
     }
 
-    fn visit_blockquote(&mut self, blockquote: &markdown::mdast::Blockquote) {
+    fn visit_blockquote(&mut self, _blockquote: &markdown::mdast::Blockquote) {
         todo!()
     }
 
     fn visit_footnote_definition(
         &mut self,
-        footnote_definition: &markdown::mdast::FootnoteDefinition,
+        _footnote_definition: &markdown::mdast::FootnoteDefinition,
     ) {
         todo!()
     }
 
     fn visit_mdx_jsx_flow_element(
         &mut self,
-        mdx_jsx_flow_element: &markdown::mdast::MdxJsxFlowElement,
+        _mdx_jsx_flow_element: &markdown::mdast::MdxJsxFlowElement,
     ) {
         todo!()
     }
 
-    fn visit_list(&mut self, list: &markdown::mdast::List) {
+    fn visit_list(&mut self, _list: &markdown::mdast::List) {
         todo!()
     }
 
-    fn visit_mdxjs_esm(&mut self, mdxjs_esm: &markdown::mdast::MdxjsEsm) {
+    fn visit_mdxjs_esm(&mut self, _mdxjs_esm: &markdown::mdast::MdxjsEsm) {
         todo!()
     }
 
-    fn visit_toml(&mut self, toml: &markdown::mdast::Toml) {
+    fn visit_toml(&mut self, _toml: &markdown::mdast::Toml) {
         todo!()
     }
 
-    fn visit_yaml(&mut self, yaml: &markdown::mdast::Yaml) {
+    fn visit_yaml(&mut self, _yaml: &markdown::mdast::Yaml) {
         todo!()
     }
 
-    fn visit_break(&mut self, break_: &markdown::mdast::Break) {
+    fn visit_break(&mut self, _break_: &markdown::mdast::Break) {
         todo!()
     }
 
-    fn visit_inline_code(&mut self, inline_code: &markdown::mdast::InlineCode) {
+    fn visit_inline_code(&mut self, _inline_code: &markdown::mdast::InlineCode) {
         todo!()
     }
 
-    fn visit_inline_math(&mut self, inline_math: &markdown::mdast::InlineMath) {
+    fn visit_inline_math(&mut self, _inline_math: &markdown::mdast::InlineMath) {
         todo!()
     }
 
-    fn visit_delete(&mut self, delete: &markdown::mdast::Delete) {
+    fn visit_delete(&mut self, _delete: &markdown::mdast::Delete) {
         todo!()
     }
 
-    fn visit_emphasis(&mut self, emphasis: &markdown::mdast::Emphasis) {
+    fn visit_emphasis(&mut self, _emphasis: &markdown::mdast::Emphasis) {
         todo!()
     }
 
     fn visit_mdx_text_expression(
         &mut self,
-        mdx_text_expression: &markdown::mdast::MdxTextExpression,
+        _mdx_text_expression: &markdown::mdast::MdxTextExpression,
     ) {
         todo!()
     }
 
     fn visit_footnote_reference(
         &mut self,
-        footnote_reference: &markdown::mdast::FootnoteReference,
+        _footnote_reference: &markdown::mdast::FootnoteReference,
     ) {
         todo!()
     }
 
-    fn visit_html(&mut self, html: &markdown::mdast::Html) {
+    fn visit_html(&mut self, _html: &markdown::mdast::Html) {
         todo!()
     }
 
-    fn visit_image(&mut self, image: &markdown::mdast::Image) {
+    fn visit_image(&mut self, _image: &markdown::mdast::Image) {
         todo!()
     }
 
-    fn visit_image_reference(&mut self, image_reference: &markdown::mdast::ImageReference) {
+    fn visit_image_reference(&mut self, _image_reference: &markdown::mdast::ImageReference) {
         todo!()
     }
 
     fn visit_mdx_jsx_text_element(
         &mut self,
-        mdx_jsx_text_element: &markdown::mdast::MdxJsxTextElement,
+        _mdx_jsx_text_element: &markdown::mdast::MdxJsxTextElement,
     ) {
         todo!()
     }
 
-    fn visit_link(&mut self, link: &markdown::mdast::Link) {
+    fn visit_link(&mut self, _link: &markdown::mdast::Link) {
         todo!()
     }
 
-    fn visit_link_reference(&mut self, link_reference: &markdown::mdast::LinkReference) {
+    fn visit_link_reference(&mut self, _link_reference: &markdown::mdast::LinkReference) {
         todo!()
     }
 
-    fn visit_strong(&mut self, strong: &markdown::mdast::Strong) {
+    fn visit_strong(&mut self, _strong: &markdown::mdast::Strong) {
         todo!()
     }
 
@@ -135,17 +135,17 @@ impl MarkdownVisitor<()> for TextExtractor {
         self.text += &text.value;
     }
 
-    fn visit_code(&mut self, code: &markdown::mdast::Code) {
+    fn visit_code(&mut self, _code: &markdown::mdast::Code) {
         todo!()
     }
 
-    fn visit_math(&mut self, math: &markdown::mdast::Math) {
+    fn visit_math(&mut self, _math: &markdown::mdast::Math) {
         todo!()
     }
 
     fn visit_mdx_flow_expression(
         &mut self,
-        mdx_flow_expression: &markdown::mdast::MdxFlowExpression,
+        _mdx_flow_expression: &markdown::mdast::MdxFlowExpression,
     ) {
         todo!()
     }
@@ -156,31 +156,31 @@ impl MarkdownVisitor<()> for TextExtractor {
         }
     }
 
-    fn visit_table(&mut self, table: &markdown::mdast::Table) {
+    fn visit_table(&mut self, _table: &markdown::mdast::Table) {
         todo!()
     }
 
-    fn visit_thematic_break(&mut self, thematic_break: &markdown::mdast::ThematicBreak) {
+    fn visit_thematic_break(&mut self, _thematic_break: &markdown::mdast::ThematicBreak) {
         todo!()
     }
 
-    fn visit_table_row(&mut self, table_row: &markdown::mdast::TableRow) {
+    fn visit_table_row(&mut self, _table_row: &markdown::mdast::TableRow) {
         todo!()
     }
 
-    fn visit_table_cell(&mut self, table_cell: &markdown::mdast::TableCell) {
+    fn visit_table_cell(&mut self, _table_cell: &markdown::mdast::TableCell) {
         todo!()
     }
 
-    fn visit_list_item(&mut self, list_item: &markdown::mdast::ListItem) {
+    fn visit_list_item(&mut self, _list_item: &markdown::mdast::ListItem) {
         todo!()
     }
 
-    fn visit_definition(&mut self, definition: &markdown::mdast::Definition) {
+    fn visit_definition(&mut self, _definition: &markdown::mdast::Definition) {
         todo!()
     }
 
-    fn visit_paragraph(&mut self, paragraph: &markdown::mdast::Paragraph) {
+    fn visit_paragraph(&mut self, _paragraph: &markdown::mdast::Paragraph) {
         todo!()
     }
 }

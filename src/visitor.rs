@@ -1,4 +1,10 @@
-use markdown::mdast::*;
+use markdown::mdast::{
+    Blockquote, Break, Code, Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference,
+    Heading, Html, Image, ImageReference, InlineCode, InlineMath, Link, LinkReference, List,
+    ListItem, Math, MdxFlowExpression, MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression,
+    MdxjsEsm, Node, Paragraph, Root, Strong, Table, TableCell, TableRow, Text, ThematicBreak, Toml,
+    Yaml,
+};
 
 #[allow(unused_variables)]
 pub trait MarkdownVisitor<T>: Sized {
@@ -135,5 +141,11 @@ impl MarkdownNode for Heading {
 impl MarkdownNode for Root {
     fn accept<T>(&self, visitor: &mut impl MarkdownVisitor<T>) -> T {
         visitor.visit_root(self)
+    }
+}
+
+impl MarkdownNode for Code {
+    fn accept<T>(&self, visitor: &mut impl MarkdownVisitor<T>) -> T {
+        visitor.visit_code(self)
     }
 }

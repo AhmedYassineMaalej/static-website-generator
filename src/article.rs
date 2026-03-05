@@ -1,9 +1,8 @@
-use markdown::{ParseOptions, mdast::Node};
+use markdown::mdast::Node;
 
 use crate::{
     html_generator::HtmlGenerator,
     index_extractor::{Index, IndexExtractor},
-    visitor::MarkdownVisitor,
 };
 
 pub struct Article {
@@ -18,7 +17,7 @@ impl Article {
         };
 
         let index_extractor = IndexExtractor::new();
-        let index = index_extractor.extract_index(&root);
+        let index = index_extractor.extract_index(root);
 
         Self { mdast, index }
     }
@@ -27,12 +26,4 @@ impl Article {
         let html_generator = HtmlGenerator::new();
         html_generator.generate_html(&self.mdast)
     }
-}
-
-#[test]
-fn test() {
-    let input = std::fs::read_to_string("input.md").unwrap();
-    let ast = markdown::to_mdast(&input, &ParseOptions::default()).unwrap();
-    let article = Article::new(ast);
-    dbg!(article.index);
 }
