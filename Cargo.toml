@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8.8"
+build_html = "2.7.0"
 futures-util = "0.3.32"
 markdown = "1.0.0" # parsing markdown file into mdast
 notify = "8.2.0" # file watching

@@ -82,6 +82,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "build_html"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10b322c8c13b6b775e5befd834d2a27c683506f1100b56a7b39d33c28024ba54"
+
+[[package]]
 name = "bytes"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,6 +727,7 @@ name = "static-website-generator"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "build_html",
  "futures-util",
  "markdown",
  "notify",

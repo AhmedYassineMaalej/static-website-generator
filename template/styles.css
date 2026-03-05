@@ -1,0 +1,25 @@
+body {
+    display: grid;
+    grid-template:
+        "index content" / 200px 1fr;
+}
+
+.content {
+    grid-area: content;
+}
+
+
+.index {
+    grid-area: index;
+}
+
+
+
+span.word {
+    word-wrap: normal;
+    display: inline-block;
+}
+
+span.word:hover {
+    color: darkorange;
+}

@@ -8,6 +8,7 @@ socket.addEventListener("open", e => console.log("connected to server: ", e));
 socket.addEventListener("message", m => {
     console.log("received data");
     let msg = JSON.parse(m.data);
+    console.log(msg);
     if (msg.type == "css") {
         style.innerHTML = msg.payload;
     }
@@ -20,4 +21,9 @@ socket.addEventListener("close", _ => console.log("disconnected from server"));
 
 window.addEventListener('beforeunload', (_event) => {
     socket.close();
+});
+
+content.addEventListener("click", e => {
+    const position = e.target.dataset.position;
+    socket.send(position);
 });
