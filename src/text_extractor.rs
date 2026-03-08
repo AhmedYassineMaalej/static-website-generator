@@ -13,9 +13,10 @@ impl TextExtractor {
         }
     }
 
-    pub fn extract_text(mut self, node: &impl MarkdownNode) -> String {
-        node.accept(&mut self);
-        self.text
+    pub fn extract_text(node: &impl MarkdownNode) -> String {
+        let mut extractor = Self::new();
+        node.accept(&mut extractor);
+        extractor.text
     }
 }
 

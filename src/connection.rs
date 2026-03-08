@@ -1,90 +1,44 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 
 use futures_util::{
     SinkExt, StreamExt,
     stream::{SplitSink, SplitStream},
 };
-use tokio::{net::TcpStream, sync::broadcast};
+use tokio::{
+    net::TcpStream,
+    sync::{broadcast, mpsc::UnboundedSender},
+    task::JoinHandle,
+};
 use tokio_tungstenite::{
-    WebSocketStream, accept_async,
+    WebSocketStream,
     tungstenite::{Error, Message},
 };
 use tracing::info;
 
-use crate::{ClientEvent, Update, UpdateEvent, app_state::ProjectState};
+use crate::{
+    ClientEvent, Update,
+    server::{ConnectionEvent, ServerEvent},
+};
 
-pub struct Connection {
-    ws_read: SplitStream<WebSocketStream<TcpStream>>,
-    ws_write: SplitSink<WebSocketStream<TcpStream>, Message>,
+pub struct UpdaterConnection {
+    socket: SplitSink<WebSocketStream<TcpStream>, Message>,
     addr: SocketAddr,
-    state: Arc<ProjectState>,
     event_rx: broadcast::Receiver<ClientEvent>,
+    server_handle: UnboundedSender<ServerEvent>,
 }
 
-impl Connection {
-    pub async fn new(
-        stream: TcpStream,
-        addr: SocketAddr,
-        state: Arc<ProjectState>,
-        event_rx: broadcast::Receiver<ClientEvent>,
-    ) -> Self {
-        let websocket = accept_async(stream).await.unwrap();
-        let (ws_write, ws_read) = websocket.split();
+pub struct ListenerConnection {
+    socket: SplitStream<WebSocketStream<TcpStream>>,
+}
 
-        Self {
-            ws_read,
-            ws_write,
-            addr,
-            state,
-            event_rx,
-        }
+impl ListenerConnection {
+    pub fn new(socket: SplitStream<WebSocketStream<TcpStream>>) -> Self {
+        Self { socket }
     }
 
-    pub async fn send_html(&mut self) -> Result<(), Error> {
-        let article = self.state.article.read().await.html.clone();
-        let update = Update {
-            ttype: UpdateEvent::Html,
-            payload: article,
-        };
-
-        self.ws_write
-            .send(Message::from(serde_json::to_string(&update).unwrap()))
-            .await?;
-
-        info!("sent html to {}", self.addr);
-        Ok(())
-    }
-
-    pub async fn send_css(&mut self) -> Result<(), Error> {
-        let css = self.state.template.get_css().await;
-        let update = Update {
-            ttype: UpdateEvent::Css,
-            payload: css,
-        };
-
-        self.ws_write
-            .send(Message::from(serde_json::to_string(&update).unwrap()))
-            .await?;
-
-        info!("sent css to {}", self.addr);
-        Ok(())
-    }
-
-    pub async fn handle(mut self) {
-        info!("client connected on {}", self.addr);
-        self.send_html().await.unwrap();
-        self.send_css().await.unwrap();
-
-        let Self {
-            mut ws_read,
-            mut ws_write,
-            addr,
-            mut event_rx,
-            state,
-        } = self;
-
+    pub fn run(mut self) -> JoinHandle<()> {
         tokio::spawn(async move {
-            while let Some(Ok(msg)) = ws_read.next().await {
+            while let Some(Ok(msg)) = self.socket.next().await {
                 info!("received message: {msg:?}");
                 if let Message::Text(text) = msg {
                     let text = text.to_string();
@@ -98,51 +52,71 @@ impl Connection {
                     child.wait().await.unwrap();
                 }
             }
-        });
+        })
+    }
+}
 
-        while let Ok(event) = event_rx.recv().await {
-            let res = match event {
-                ClientEvent::ReloadArticle => {
-                    let html = state.article.read().await.html.clone();
-                    let update = Update {
-                        ttype: UpdateEvent::Html,
-                        payload: html,
-                    };
-                    match ws_write
-                        .send(Message::from(serde_json::to_string(&update).unwrap()))
-                        .await
-                    {
-                        Ok(()) => {
-                            info!("sent html to {}", addr);
-                            Ok(())
-                        }
-                        Err(e) => Err(e),
-                    }
-                }
-                ClientEvent::ReloadCss => {
-                    let css = state.template.get_css().await;
-                    let update = Update {
-                        ttype: UpdateEvent::Css,
-                        payload: css,
-                    };
-
-                    match ws_write
-                        .send(Message::from(serde_json::to_string(&update).unwrap()))
-                        .await
-                    {
-                        Ok(()) => {
-                            info!("sent css to {}", addr);
-                            Ok(())
-                        }
-                        Err(e) => Err(e),
-                    }
-                }
-            };
-
-            if let Err(Error::ConnectionClosed) = res {
-                info!("closed connected to {}", self.addr);
-                break;
-            }
+impl UpdaterConnection {
+    pub fn new(
+        socket: SplitSink<WebSocketStream<TcpStream>, Message>,
+        addr: SocketAddr,
+        event_rx: broadcast::Receiver<ClientEvent>,
+        server_handle: UnboundedSender<ServerEvent>,
+    ) -> Self {
+        Self {
+            socket,
+            addr,
+            event_rx,
+            server_handle,
         }
+    }
+
+    pub async fn send_event(&mut self, event: ClientEvent) -> Result<(), Error> {
+        let update = match event {
+            ClientEvent::SendArticle(article) => {
+                let lock = article.read().await;
+                Update::Markdown {
+                    content: lock.content_html.clone(),
+                    index: lock.index_html.clone(),
+                }
+            }
+            ClientEvent::SendCss(css) => Update::Css { css },
+            ClientEvent::Reload => Update::Html,
+        };
+
+        self.socket
+            .send(Message::from(serde_json::to_string(&update).unwrap()))
+            .await
+    }
+
+    pub fn run(mut self) -> JoinHandle<()> {
+        tokio::spawn(async move {
+            info!("client connected on {}", self.addr);
+            self.server_handle
+                .send(ServerEvent::ConnectionEvent(ConnectionEvent::NewConnection))
+                .unwrap();
+
+            while let Ok(event) = self.event_rx.recv().await {
+                let content_type = match event {
+                    ClientEvent::SendArticle(_) => "article",
+                    ClientEvent::SendCss(_) => "css",
+                    ClientEvent::Reload => "html",
+                };
+
+                let res = self.send_event(event).await;
+                match res {
+                    Ok(()) => {
+                        info!("sent updated {}", content_type);
+                    }
+                    Err(Error::ConnectionClosed) => {
+                        info!("closed connection to {}", self.addr);
+                        break;
+                    }
+                    Err(e) => {
+                        info!("error in sending: {e:?}");
+                    }
+                }
+            }
+        })
     }
 }

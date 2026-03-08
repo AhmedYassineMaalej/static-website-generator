@@ -1,7 +1,71 @@
+:root {
+    --theme-yellow: #f9e2af;
+    --theme-purple: #cba6f7;
+    --theme-green: #a6e3a1;
+    --theme-bg: #1e1e2e;
+    --theme-blue: #89b4fa;
+    --theme-grey: #9399b2;
+    --theme-cyan: #89dceb;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+p {
+    text-indent: 2em;
+}
+
+
+span.type {
+    color: #f9e2af;
+}
+
+span.keyword,
+span.type.builtin {
+    color: var(--theme-purple);
+}
+
+span.punctuation {
+    color: var(--theme-grey);
+}
+
+
+span.string {
+    color: var(--theme-green);
+}
+
+span.function {
+    color: var(--theme-blue)
+}
+
+span.function.macro {
+    color: var(--theme-purple);
+}
+
+span.constant.builtin {
+    color: #fab387;
+}
+
+span.operator {
+    color: var(--theme-cyan);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+}
+
 body {
+    font-family: Roboto Condensed;
     display: grid;
     grid-template:
-        "index content" / 200px 1fr;
+        "index content" / 1fr 2fr 1fr;
+    background: lightgoldenrodyellow;
 }
 
 .content {
@@ -11,45 +75,32 @@ body {
 
 .index {
     grid-area: index;
+    margin-top: 30vh;
+}
+
+.sticky {
+    position: sticky;
+    top: 10vh;
+    padding: 1em;
+    background: rgb(0 0 0 / 10%);
+    border-radius: 5px;
+    width: fit-content;
+}
+
+.sticky>a {
+    font-size: 1.3rem;
+    display: block;
+    color: black;
 }
 
 pre {
-    background: #1e1e2e;
+    background: var(--theme-bg);
     padding: 1em;
     border-radius: 1em;
     font-family: Iosevka Term Medium;
     color: #cdd6f4;
-    box-shadow: 0.5em 0.5em 5px;
+    box-shadow: rgba(0, 0, 0, 0.5) 0.5em 0.5em 5px;
     margin-right: 2em;
-}
-
-span.keyword {
-    color: #cba6f7;
-}
-
-span.type\.builtin {
-    color: #cba6f7;
-}
-
-
-span.type {
-    color: #f9e2af;
-}
-
-span.string {
-    color: #a6e3a1;
-}
-
-span.function {
-    color: #89b4fa;
-}
-
-span.function\.macro {
-    color: #cba6f7;
-}
-
-span.constant\.builtin {
-    color: #fab387;
 }
 
 

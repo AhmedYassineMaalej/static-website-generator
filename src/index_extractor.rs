@@ -16,16 +16,16 @@ impl IndexExtractor {
         Self { index: Vec::new() }
     }
 
-    pub fn extract_index(mut self, article: &Root) -> Index {
-        article.accept(&mut self);
-        self.index
+    pub fn extract_index(article: &Root) -> Index {
+        let mut extractor = Self::new();
+        article.accept(&mut extractor);
+        extractor.index
     }
 }
 
 impl MarkdownVisitor<()> for IndexExtractor {
     fn visit_heading(&mut self, heading: &Heading) {
-        let text_extractor = TextExtractor::new();
-        let text = text_extractor.extract_text(heading);
+        let text = TextExtractor::extract_text(heading);
 
         self.index.push(text);
     }
@@ -66,8 +66,8 @@ impl MarkdownVisitor<()> for IndexExtractor {
         todo!()
     }
 
-    fn visit_yaml(&mut self, _yaml: &markdown::mdast::Yaml) -> () {
-        todo!()
+    fn visit_yaml(&mut self, _yaml: &markdown::mdast::Yaml) {
+        // can't contain any headings
     }
 
     fn visit_break(&mut self, _break_: &markdown::mdast::Break) -> () {

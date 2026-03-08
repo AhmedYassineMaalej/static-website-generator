@@ -41,16 +41,17 @@ impl ProjectDirectories {
         }
 
         if path.starts_with(&self.template) {
-            if path.extension().unwrap() == "css" {
+            let extension = path.extension().unwrap();
+            if extension == "css" {
                 return Some(UpdateEvent::Css);
             }
 
-            if path.extension().unwrap() == "js" {
-                return Some(UpdateEvent::Html);
+            if extension == "js" {
+                return Some(UpdateEvent::Javascript);
             }
 
-            if path.extension().unwrap() == "html" {
-                return Some(UpdateEvent::Javascript);
+            if extension == "html" {
+                return Some(UpdateEvent::Html);
             }
         }
 

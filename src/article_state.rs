@@ -5,16 +5,19 @@ use tokio::fs;
 
 use crate::article::Article;
 
+#[derive(Debug)]
 pub struct ArticleState {
     pub path: PathBuf,
     pub article: Article,
-    pub html: String,
+    pub content_html: String,
+    pub index_html: String,
 }
 
 impl ArticleState {
     pub fn new(article: Article, path: PathBuf) -> Self {
         Self {
-            html: article.html(),
+            content_html: article.content_html(),
+            index_html: article.index_html(),
             path,
             article,
         }
@@ -23,15 +26,22 @@ impl ArticleState {
     pub async fn from_file(path: &Path) -> Self {
         let markdown = fs::read_to_string(&path).await.unwrap();
 
-        let mdast = markdown::to_mdast(&markdown, &ParseOptions::default()).unwrap();
+        let mut options = ParseOptions::default();
+        options.constructs.frontmatter = true;
+
+        let mdast = markdown::to_mdast(&markdown, &options).unwrap();
         let article = Article::new(mdast);
         Self::new(article, path.to_path_buf())
     }
 
     pub async fn update(&mut self) {
         let markdown = fs::read_to_string(&self.path).await.unwrap();
-        let mdast = markdown::to_mdast(&markdown, &ParseOptions::default()).unwrap();
+
+        let mut options = ParseOptions::default();
+        options.constructs.frontmatter = true;
+
+        let mdast = markdown::to_mdast(&markdown, &options).unwrap();
         self.article = Article::new(mdast);
-        self.html = self.article.html();
+        self.content_html = self.article.content_html();
     }
 }

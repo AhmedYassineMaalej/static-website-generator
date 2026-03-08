@@ -3,6 +3,7 @@ use notify::{
 };
 
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tracing::info;
 
 use crate::{config::ProjectDirectories, server::ServerEvent};
 
@@ -52,6 +53,7 @@ impl FileWatcher {
             };
 
             for path in paths.into_iter().flat_map(|p| p.canonicalize()) {
+                info!("change detected at {:?}", std::time::Instant::now());
                 if let Some(update) = self.directories.process_change(&path) {
                     server_handle.send(ServerEvent::Update(update)).unwrap();
                 }

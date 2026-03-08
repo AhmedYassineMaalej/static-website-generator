@@ -3,10 +3,12 @@ use markdown::{
     mdast::{Node, Root},
     unist::Point,
 };
-use tree_sitter::Parser;
-use tree_sitter_highlight::{Highlight, HighlightConfiguration, Highlighter, HtmlRenderer};
 
-use crate::visitor::{MarkdownNode, MarkdownVisitor};
+use crate::{
+    highlight::Highlighter,
+    text_extractor::TextExtractor,
+    visitor::{MarkdownNode, MarkdownVisitor},
+};
 
 pub struct HtmlGenerator {}
 
@@ -43,6 +45,9 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         };
 
         let mut element = HtmlElement::new(tag);
+        let heading_text = TextExtractor::extract_text(heading);
+        element.add_attribute("id", heading_text.replace(' ', "-"));
+
         for node in &heading.children {
             element.add_child(self.visit_node(node));
         }
@@ -89,8 +94,15 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         todo!()
     }
 
-    fn visit_yaml(&mut self, _yaml: &markdown::mdast::Yaml) -> HtmlChild {
-        todo!()
+    fn visit_yaml(&mut self, yaml: &markdown::mdast::Yaml) -> HtmlChild {
+        let yaml = yaml.value.clone();
+
+        let (key, value) = yaml.split_once(':').unwrap();
+        assert_eq!(key, "title");
+
+        let mut element = HtmlElement::new(HtmlTag::Heading1);
+        element.add_child(value.into());
+        element.into()
     }
 
     fn visit_break(&mut self, _break_: &markdown::mdast::Break) -> HtmlChild {
@@ -149,8 +161,14 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         todo!()
     }
 
-    fn visit_link(&mut self, _link: &markdown::mdast::Link) -> HtmlChild {
-        todo!()
+    fn visit_link(&mut self, link: &markdown::mdast::Link) -> HtmlChild {
+        let mut element = HtmlElement::new(HtmlTag::Link);
+        element.add_attribute("href", &link.url);
+        for child in &link.children {
+            element.add_child(self.visit_node(child));
+        }
+
+        element.into()
     }
 
     fn visit_link_reference(
@@ -191,51 +209,11 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
     }
 
     fn visit_code(&mut self, code: &markdown::mdast::Code) -> HtmlChild {
-        let mut parser = Parser::new();
-        parser
-            .set_language(&tree_sitter_rust::LANGUAGE.into())
-            .unwrap();
+        let lang = code.lang.as_ref().unwrap();
+        let start = code.position.clone().unwrap().start;
+        let (line, column) = (start.line + 1, 1); // put cursor at code start
 
-        let code = code.value.clone();
-
-        let mut highlighter = Highlighter::new();
-        let rust_lang = tree_sitter_rust::LANGUAGE.into();
-        let mut rust_config = HighlightConfiguration::new(
-            rust_lang,
-            "rust",
-            tree_sitter_rust::HIGHLIGHTS_QUERY,
-            tree_sitter_rust::INJECTIONS_QUERY,
-            tree_sitter_rust::TAGS_QUERY,
-        )
-        .unwrap();
-
-        let types = [
-            "function",
-            "keyword",
-            "string",
-            "variable",
-            "constant.builtin",
-            "type.builtin",
-            "type",
-        ];
-
-        rust_config.configure(&types);
-        let highlights = highlighter
-            .highlight(&rust_config, code.as_bytes(), None, |_| None)
-            .unwrap();
-
-        let mut html_renderer = HtmlRenderer::new();
-        html_renderer
-            .render(highlights, code.as_bytes(), &|Highlight(x), b| {
-                b.extend(format!("class={:?}", &types[x]).as_bytes().to_vec());
-            })
-            .unwrap();
-
-        let html = html_renderer.lines().collect::<String>();
-        dbg!(&html);
-        HtmlElement::new(HtmlTag::PreformattedText)
-            .with_child(html.into())
-            .into()
+        Highlighter::highlight(&code.value, lang, (line, column)).into()
     }
 
     fn visit_math(&mut self, _math: &markdown::mdast::Math) -> HtmlChild {
@@ -340,44 +318,4 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         element.add_attribute("data-position", format!("{line}:{column}"));
         element.into()
     }
-}
-
-#[test]
-fn test_syntax_highlighting() {
-    let code = String::from("fn main() { println!(\"hello world\"); }");
-
-    // for highlight in highlights {
-    //     println!("{:?}", highlight.unwrap());
-    // }
-
-    //
-    // let mut parser = Parser::new();
-    // parser
-    //     .set_language(&tree_sitter_rust::LANGUAGE.into())
-    //     .unwrap();
-    //
-    // let tree = parser.parse(&code, None).unwrap();
-    // let mut cursor = tree.walk();
-    //
-    // 'outer: loop {
-    //     let node = cursor.node();
-    //     let node_type = node.kind();
-    //     let start = node.start_position();
-    //     let end = node.end_position();
-    //     println!("Node: {}, Range: {:?} - {:?}", node_type, start, end);
-    //
-    //     if cursor.goto_first_child() {
-    //         continue;
-    //     }
-    //
-    //     if cursor.goto_next_sibling() {
-    //         continue;
-    //     }
-    //
-    //     while !cursor.goto_next_sibling() {
-    //         if !cursor.goto_parent() {
-    //             break 'outer;
-    //         }
-    //     }
-    // }
 }

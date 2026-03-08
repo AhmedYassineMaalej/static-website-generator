@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.8"
-build_html = "2.7.0"
+arborium = {version = "2.14.0", features = ["all-languages"]} # code syntax highlighting
+axum = "0.8.8" # http server
+build_html = "2.7.0" 
 futures-util = "0.3.32"
 markdown = "1.0.0" # parsing markdown file into mdast
 notify = "8.2.0" # file watching
@@ -15,6 +16,3 @@ tokio = { version = "1.49.0", features = ["full", "tracing"] }
 tokio-tungstenite = "0.28.0" # websocket support
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
-tree-sitter = "0.26.6"
-tree-sitter-highlight = "0.26.6"
-tree-sitter-rust = "0.24.0"
