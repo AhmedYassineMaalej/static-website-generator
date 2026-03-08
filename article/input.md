@@ -2,6 +2,10 @@
 title: Making an SSG with Rust
 ---
 
+$$
+\int_{-\infty}^{+\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
 For now this article will contain a general walkthrough of how I made this tool.
 
 ## Runtime
@@ -24,6 +28,7 @@ websockets with tungstenite
 
 ## Code highlighting
 tried treesitter (pain) then arborium
+
 
 ```rust
 struct User {

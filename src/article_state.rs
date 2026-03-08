@@ -26,8 +26,7 @@ impl ArticleState {
     pub async fn from_file(path: &Path) -> Self {
         let markdown = fs::read_to_string(&path).await.unwrap();
 
-        let mut options = ParseOptions::default();
-        options.constructs.frontmatter = true;
+        let options = Self::parse_options();
 
         let mdast = markdown::to_mdast(&markdown, &options).unwrap();
         let article = Article::new(mdast);
@@ -37,11 +36,18 @@ impl ArticleState {
     pub async fn update(&mut self) {
         let markdown = fs::read_to_string(&self.path).await.unwrap();
 
-        let mut options = ParseOptions::default();
-        options.constructs.frontmatter = true;
+        let options = Self::parse_options();
 
         let mdast = markdown::to_mdast(&markdown, &options).unwrap();
         self.article = Article::new(mdast);
         self.content_html = self.article.content_html();
+    }
+
+    fn parse_options() -> ParseOptions {
+        let mut options = ParseOptions::default();
+        options.constructs.frontmatter = true;
+        options.constructs.math_flow = true;
+
+        options
     }
 }

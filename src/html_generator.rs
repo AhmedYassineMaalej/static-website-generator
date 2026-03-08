@@ -216,8 +216,12 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         Highlighter::highlight(&code.value, lang, (line, column)).into()
     }
 
-    fn visit_math(&mut self, _math: &markdown::mdast::Math) -> HtmlChild {
-        todo!()
+    fn visit_math(&mut self, math: &markdown::mdast::Math) -> HtmlChild {
+        let mut element = HtmlElement::new(HtmlTag::ParagraphText);
+
+        element.add_child(format!("$$\n{}\n$$", math.value.clone()).into());
+
+        element.into()
     }
 
     fn visit_mdx_flow_expression(

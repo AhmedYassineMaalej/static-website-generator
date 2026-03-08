@@ -1,7 +1,7 @@
 const socket = new WebSocket("ws://127.0.0.1:9001");
 const content = document.querySelector(".content");
 const index = document.querySelector(".index");
-const style = document.querySelector("style");
+const style = document.querySelector("#hot-css");
 
 
 socket.addEventListener("open", e => console.log("connected to server: ", e));
@@ -17,6 +17,7 @@ socket.addEventListener("message", m => {
     if (msg.type == "markdown") {
         content.innerHTML = msg.content;
         index.innerHTML = msg.index;
+        MathJax.typeset();
     }
 
     if (msg.type == "html") {

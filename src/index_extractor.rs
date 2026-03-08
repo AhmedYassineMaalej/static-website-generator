@@ -139,13 +139,9 @@ impl MarkdownVisitor<()> for IndexExtractor {
         todo!()
     }
 
-    fn visit_code(&mut self, _code: &markdown::mdast::Code) {
-        // paragraph can't contain heading: do nothing
-    }
+    fn visit_code(&mut self, _code: &markdown::mdast::Code) {}
 
-    fn visit_math(&mut self, _math: &markdown::mdast::Math) -> () {
-        todo!()
-    }
+    fn visit_math(&mut self, _math: &markdown::mdast::Math) {}
 
     fn visit_mdx_flow_expression(
         &mut self,
