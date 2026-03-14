@@ -1,12 +1,13 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use futures_util::{
     SinkExt, StreamExt,
     stream::{SplitSink, SplitStream},
 };
+use serde::Serialize;
 use tokio::{
     net::TcpStream,
-    sync::{broadcast, mpsc::UnboundedSender},
+    sync::{RwLock, broadcast, mpsc::UnboundedSender},
     task::JoinHandle,
 };
 use tokio_tungstenite::{
@@ -16,9 +17,33 @@ use tokio_tungstenite::{
 use tracing::info;
 
 use crate::{
-    ClientEvent, Update,
+    article_state::ArticleState,
     server::{ConnectionEvent, ServerEvent},
 };
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+#[serde(rename_all = "lowercase")]
+pub enum Update {
+    Markdown {
+        content: String,
+        index: String,
+        title: String,
+        tags: String,
+    },
+    Html, // dont need to send anything as page will just reload
+    Css {
+        css: String,
+    },
+    Javascript,
+}
+
+#[derive(Clone, Debug)]
+pub enum ClientEvent {
+    SendArticle(Arc<RwLock<ArticleState>>),
+    SendCss(String),
+    Reload,
+}
 
 pub struct UpdaterConnection {
     socket: SplitSink<WebSocketStream<TcpStream>, Message>,
@@ -78,6 +103,8 @@ impl UpdaterConnection {
                 Update::Markdown {
                     content: lock.content_html.clone(),
                     index: lock.index_html.clone(),
+                    title: lock.article.title_html(),
+                    tags: lock.article.tags_html(),
                 }
             }
             ClientEvent::SendCss(css) => Update::Css { css },

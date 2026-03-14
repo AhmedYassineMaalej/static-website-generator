@@ -5,10 +5,10 @@ use std::{
 
 use tokio::{fs, sync::RwLock};
 
-use crate::{article_state::ArticleState, config::Config};
+use crate::{article_state::ArticleState, config::WatcherConfig};
 
 pub struct ProjectState {
-    pub config: Config,
+    pub config: WatcherConfig,
     pub template: Arc<Template>,
     pub article: Arc<RwLock<ArticleState>>,
 }
@@ -80,22 +80,9 @@ impl Template {
 }
 
 impl ProjectState {
-    pub async fn new(config: Config) -> Self {
-        let template = Template::from_directory(&config.directories.template).await;
-        let mut article_directory = tokio::fs::read_dir(&config.directories.article)
-            .await
-            .unwrap();
-
-        let mut article = None;
-        while let Ok(Some(article_entry)) = article_directory.next_entry().await {
-            let article_dir_path = article_entry.path();
-            let article_state = ArticleState::from_file(&article_dir_path).await;
-            article = Some(article_state);
-        }
-
-        let Some(article) = article else {
-            panic!("no article found");
-        };
+    pub async fn new(config: WatcherConfig) -> Self {
+        let template = Template::from_directory(&config.template).await;
+        let article = ArticleState::from_file(&config.article).await;
 
         Self {
             config,

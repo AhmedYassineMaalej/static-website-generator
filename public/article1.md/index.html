@@ -1,0 +1,231 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"
+    ></script>
+    <style>:root {
+    --theme-yellow: #f9e2af;
+    --theme-purple: #cba6f7;
+    --theme-green: #a6e3a1;
+    --theme-bg: #1e1e2e;
+    --theme-blue: #89b4fa;
+    --theme-grey: #9399b2;
+    --theme-cyan: #89dceb;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 1em;
+}
+
+p {
+    text-indent: 2em;
+    overflow-wrap: anywhere;
+}
+
+span.word {
+    white-space: nowrap;
+}
+
+span.word:hover {
+    color: darkorange;
+}
+
+
+span.type {
+    color: #f9e2af;
+}
+
+span.keyword,
+span.type.builtin {
+    color: var(--theme-purple);
+}
+
+span.punctuation {
+    color: var(--theme-grey);
+}
+
+
+span.string {
+    color: var(--theme-green);
+}
+
+span.function {
+    color: var(--theme-blue)
+}
+
+span.function.macro {
+    color: var(--theme-purple);
+}
+
+span.constant.builtin {
+    color: #fab387;
+}
+
+span.operator {
+    color: var(--theme-cyan);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+}
+
+.content-container,
+.index,
+.title-container,
+pre {
+    border-color: black;
+    border-radius: 10px;
+    border-width: 3px;
+    border-style: solid;
+    box-shadow: 7px 7px black;
+}
+
+body {
+    display: grid;
+    font-family: Roboto Condensed;
+    background: orangered;
+    grid-template:
+        "title title title"
+        ". content index" / 1fr 2fr 1fr;
+}
+
+.title-container {
+    grid-area: title;
+    width: fit-content;
+    margin: 1em auto;
+    padding: 0 1em;
+    background: blueviolet;
+    color: white;
+}
+
+.content-container {
+    grid-area: content;
+    align-self: center;
+    justify-items: center;
+    padding: 1em;
+    background: white;
+}
+
+
+
+.index-container {
+    grid-area: index;
+}
+
+.index {
+    position: sticky;
+    top: 10vh;
+    margin: auto;
+    padding: 1em;
+    background: dodgerblue;
+    border-radius: 5px;
+    width: fit-content;
+    height: fit-content;
+}
+
+.index h1 {
+    padding: 0em;
+    margin: 0em;
+}
+
+
+
+.index>a {
+    font-size: 1.3rem;
+    display: block;
+    color: black;
+    text-decoration: none;
+    padding: 0.2em;
+    border: 3px solid transparent;
+    border-radius: 6px;
+    width: fit-content;
+}
+
+
+
+.index>a:visited {
+    color: black;
+}
+
+.index>a:hover {
+    background: rgb(from white r g b / 20%);
+    border: 3px solid black;
+    border-radius: 6px;
+    box-shadow: 5px 5px black;
+}
+
+pre {
+    background: var(--theme-bg);
+    padding: 1em;
+    border-radius: 1em;
+    font-family: Iosevka Term Medium;
+    color: #cdd6f4;
+    margin-right: 2em;
+}
+
+a {
+    color: deeppink;
+}
+</style>
+    <title>Making an Static Site Generator with Rust</title>
+  </head>
+  <body>
+    <div class="title-container">
+    <h1 class="title">Making an Static Site Generator with Rust</h1>
+    </div>
+    <div class="content-container">
+<div data-position="1:1"><p data-position="8:1">For now this article will contain a general walkthrough of how I made this tool.</p><h2 id="Runtime" data-position="10:1">Runtime</h2><p data-position="13:1">tokio and stuff for multithreading</p><h2 id="File-Watching" data-position="15:1">File Watching</h2><p data-position="17:1"><a href="https://github.com/notify-rs/notify" target="_blank" data-position="17:1">notify.rs</a> crate</p><h2 id="Bulding-the-HTML" data-position="20:1">Bulding the HTML</h2><p data-position="22:1">html_builder crate</p><h2 id="Hot-Reloading" data-position="24:1">Hot Reloading</h2><p data-position="26:1">websockets with tungstenite</p><h2 id="Code-highlighting" data-position="28:1">Code highlighting</h2><p data-position="29:1">tried treesitter (pain) then arborium</p><pre data-position="32:1"><span data-position="33:1" class="keyword">struct</span><span data-position="33:7"> </span><span data-position="33:8" class="type">User</span><span data-position="33:12"> </span><span data-position="33:13" class="punctuation bracket">{</span><span data-position="33:14">
+    </span><span data-position="34:5" class="property">id</span><span data-position="34:7" class="punctuation delimiter">:</span><span data-position="34:8"> </span><span data-position="34:9" class="type builtin">usize</span><span data-position="34:14" class="punctuation delimiter">,</span><span data-position="34:15">
+    </span><span data-position="35:5" class="property">name</span><span data-position="35:9" class="punctuation delimiter">:</span><span data-position="35:10"> </span><span data-position="35:11" class="type">String</span><span data-position="35:17">
+</span><span data-position="36:1" class="punctuation bracket">}</span><span data-position="36:2">
+
+</span><span data-position="38:1" class="keyword">fn</span><span data-position="38:3"> </span><span data-position="38:4" class="function">main</span><span data-position="38:8" class="punctuation bracket">(</span><span data-position="38:9" class="punctuation bracket">)</span><span data-position="38:10"> </span><span data-position="38:11" class="punctuation bracket">{</span><span data-position="38:12">
+    </span><span data-position="39:5" class="keyword">let</span><span data-position="39:8"> x = </span><span data-position="39:13" class="constant builtin">1</span><span data-position="39:14" class="punctuation delimiter">;</span><span data-position="39:15">
+    </span><span data-position="40:5" class="function macro">prinln</span><span data-position="40:11" class="function macro">!</span><span data-position="40:12" class="punctuation bracket">(</span><span data-position="40:13" class="string">"hello world"</span><span data-position="40:26" class="punctuation bracket">)</span><span data-position="40:27" class="punctuation delimiter"></span><span data-position="40:27" class="punctuation delimiter">;</span><span data-position="40:28">
+</span><span data-position="41:1" class="punctuation bracket">}</span></pre><pre data-position="45:1"><span data-position="46:1" class="keyword">struct</span><span data-position="46:7"> </span><span data-position="46:8" class="type">User</span><span data-position="46:12"> </span><span data-position="46:13" class="punctuation bracket">{</span><span data-position="46:14">
+    </span><span data-position="47:5" class="property">id</span><span data-position="47:7" class="punctuation delimiter">:</span><span data-position="47:8"> </span><span data-position="47:9" class="type builtin">usize</span><span data-position="47:14" class="punctuation delimiter">,</span><span data-position="47:15">
+    </span><span data-position="48:5" class="property">name</span><span data-position="48:9" class="punctuation delimiter">:</span><span data-position="48:10"> </span><span data-position="48:11" class="type">String</span><span data-position="48:17">
+</span><span data-position="49:1" class="punctuation bracket">}</span><span data-position="49:2">
+
+</span><span data-position="51:1" class="keyword">fn</span><span data-position="51:3"> </span><span data-position="51:4" class="function">main</span><span data-position="51:8" class="punctuation bracket">(</span><span data-position="51:9" class="punctuation bracket">)</span><span data-position="51:10"> </span><span data-position="51:11" class="punctuation bracket">{</span><span data-position="51:12">
+    </span><span data-position="52:5" class="function macro">prinln</span><span data-position="52:11" class="function macro">!</span><span data-position="52:12" class="punctuation bracket">(</span><span data-position="52:13" class="string">"hello world"</span><span data-position="52:26" class="punctuation bracket">)</span><span data-position="52:27" class="punctuation delimiter"></span><span data-position="52:27" class="punctuation delimiter">;</span><span data-position="52:28">
+</span><span data-position="53:1" class="punctuation bracket">}</span></pre><pre data-position="57:1"><span data-position="58:1" class="keyword">struct</span><span data-position="58:7"> </span><span data-position="58:8" class="type">User</span><span data-position="58:12"> </span><span data-position="58:13" class="punctuation bracket">{</span><span data-position="58:14">
+    </span><span data-position="59:5" class="property">id</span><span data-position="59:7" class="punctuation delimiter">:</span><span data-position="59:8"> </span><span data-position="59:9" class="type builtin">usize</span><span data-position="59:14" class="punctuation delimiter">,</span><span data-position="59:15">
+    </span><span data-position="60:5" class="property">name</span><span data-position="60:9" class="punctuation delimiter">:</span><span data-position="60:10"> </span><span data-position="60:11" class="type">String</span><span data-position="60:17">
+</span><span data-position="61:1" class="punctuation bracket">}</span><span data-position="61:2">
+
+</span><span data-position="63:1" class="keyword">fn</span><span data-position="63:3"> </span><span data-position="63:4" class="function">main</span><span data-position="63:8" class="punctuation bracket">(</span><span data-position="63:9" class="punctuation bracket">)</span><span data-position="63:10"> </span><span data-position="63:11" class="punctuation bracket">{</span><span data-position="63:12">
+    </span><span data-position="64:5" class="function macro">prinln</span><span data-position="64:11" class="function macro">!</span><span data-position="64:12" class="punctuation bracket">(</span><span data-position="64:13" class="string">"hello world"</span><span data-position="64:26" class="punctuation bracket">)</span><span data-position="64:27" class="punctuation delimiter"></span><span data-position="64:27" class="punctuation delimiter">;</span><span data-position="64:28">
+</span><span data-position="65:1" class="punctuation bracket">}</span></pre><pre data-position="69:1"><span data-position="70:1" class="keyword">struct</span><span data-position="70:7"> </span><span data-position="70:8" class="type">User</span><span data-position="70:12"> </span><span data-position="70:13" class="punctuation bracket">{</span><span data-position="70:14">
+    </span><span data-position="71:5" class="property">id</span><span data-position="71:7" class="punctuation delimiter">:</span><span data-position="71:8"> </span><span data-position="71:9" class="type builtin">usize</span><span data-position="71:14" class="punctuation delimiter">,</span><span data-position="71:15">
+    </span><span data-position="72:5" class="property">name</span><span data-position="72:9" class="punctuation delimiter">:</span><span data-position="72:10"> </span><span data-position="72:11" class="type">String</span><span data-position="72:17">
+</span><span data-position="73:1" class="punctuation bracket">}</span><span data-position="73:2">
+
+</span><span data-position="75:1" class="keyword">fn</span><span data-position="75:3"> </span><span data-position="75:4" class="function">main</span><span data-position="75:8" class="punctuation bracket">(</span><span data-position="75:9" class="punctuation bracket">)</span><span data-position="75:10"> </span><span data-position="75:11" class="punctuation bracket">{</span><span data-position="75:12">
+    </span><span data-position="76:5" class="function macro">prinln</span><span data-position="76:11" class="function macro">!</span><span data-position="76:12" class="punctuation bracket">(</span><span data-position="76:13" class="string">"hello world"</span><span data-position="76:26" class="punctuation bracket">)</span><span data-position="76:27" class="punctuation delimiter"></span><span data-position="76:27" class="punctuation delimiter">;</span><span data-position="76:28">
+</span><span data-position="77:1" class="punctuation bracket">}</span></pre><pre data-position="80:1"><span data-position="81:1" class="keyword">struct</span><span data-position="81:7"> </span><span data-position="81:8" class="type">User</span><span data-position="81:12"> </span><span data-position="81:13" class="punctuation bracket">{</span><span data-position="81:14">
+    </span><span data-position="82:5" class="property">id</span><span data-position="82:7" class="punctuation delimiter">:</span><span data-position="82:8"> </span><span data-position="82:9" class="type builtin">usize</span><span data-position="82:14" class="punctuation delimiter">,</span><span data-position="82:15">
+    </span><span data-position="83:5" class="property">name</span><span data-position="83:9" class="punctuation delimiter">:</span><span data-position="83:10"> </span><span data-position="83:11" class="type">String</span><span data-position="83:17">
+</span><span data-position="84:1" class="punctuation bracket">}</span><span data-position="84:2">
+
+</span><span data-position="86:1" class="keyword">fn</span><span data-position="86:3"> </span><span data-position="86:4" class="function">main</span><span data-position="86:8" class="punctuation bracket">(</span><span data-position="86:9" class="punctuation bracket">)</span><span data-position="86:10"> </span><span data-position="86:11" class="punctuation bracket">{</span><span data-position="86:12">
+    </span><span data-position="87:5" class="function macro">prinln</span><span data-position="87:11" class="function macro">!</span><span data-position="87:12" class="punctuation bracket">(</span><span data-position="87:13" class="string">"hello world"</span><span data-position="87:26" class="punctuation bracket">)</span><span data-position="87:27" class="punctuation delimiter"></span><span data-position="87:27" class="punctuation delimiter">;</span><span data-position="87:28">
+</span><span data-position="88:1" class="punctuation bracket">}</span></pre></div>
+    </div>
+    <div class="index-container">
+    <div class="index"><h1>Content</h1><a href="#Runtime">Runtime</a><a href="#File-Watching">File Watching</a><a href="#Bulding-the-HTML">Bulding the HTML</a><a href="#Hot-Reloading">Hot Reloading</a><a href="#Code-highlighting">Code highlighting</a></div>
+    </div>
+  </body>
+  <script src="script.js"></script>
+</html>

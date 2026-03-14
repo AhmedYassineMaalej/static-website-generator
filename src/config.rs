@@ -1,42 +1,34 @@
 use std::path::{Path, PathBuf};
 
-use crate::UpdateEvent;
+use serde::Serialize;
 
-#[derive(Clone)]
-pub struct Config {
-    pub directories: ProjectDirectories,
-}
-
-impl Config {
-    pub fn new(directories: ProjectDirectories) -> Self {
-        Self { directories }
-    }
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum UpdateEvent {
+    Markdown,
+    Html,
+    Css,
+    Javascript,
 }
 
 #[derive(Clone)]
-pub struct ProjectDirectories {
+pub struct WatcherConfig {
     pub article: PathBuf,
-    pub public: PathBuf,
     pub template: PathBuf,
 }
 
-impl ProjectDirectories {
-    pub fn new(
-        article_directory: &Path,
-        public_directory: &Path,
-        template_directory: &Path,
-    ) -> Self {
+impl WatcherConfig {
+    pub fn new(article: &Path, template: &Path) -> Self {
         Self {
-            article: article_directory.canonicalize().unwrap(),
-            public: public_directory.canonicalize().unwrap(),
-            template: template_directory.canonicalize().unwrap(),
+            article: article.canonicalize().unwrap(),
+            template: template.canonicalize().unwrap(),
         }
     }
 
     pub fn process_change(&self, path: &Path) -> Option<UpdateEvent> {
         let path = path.canonicalize().unwrap();
 
-        if path.starts_with(&self.article) {
+        if path == self.article {
             return Some(UpdateEvent::Markdown);
         }
 

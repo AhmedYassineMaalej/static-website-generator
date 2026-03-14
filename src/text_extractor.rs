@@ -1,22 +1,22 @@
 use markdown::mdast::{Heading, Root, Text};
 
-use crate::visitor::{MarkdownNode, MarkdownVisitor};
+use crate::{extractor::Extractor, markdown_visitor::MarkdownVisitor};
 
 pub struct TextExtractor {
     text: String,
 }
 
 impl TextExtractor {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             text: String::new(),
         }
     }
+}
 
-    pub fn extract_text(node: &impl MarkdownNode) -> String {
-        let mut extractor = Self::new();
-        node.accept(&mut extractor);
-        extractor.text
+impl Extractor<String> for TextExtractor {
+    fn consume(self) -> String {
+        self.text
     }
 }
 

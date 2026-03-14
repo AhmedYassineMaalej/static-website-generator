@@ -16,7 +16,7 @@ pub struct ArticleState {
 impl ArticleState {
     pub fn new(article: Article, path: PathBuf) -> Self {
         Self {
-            content_html: article.content_html(),
+            content_html: article.content_html(true),
             index_html: article.index_html(),
             path,
             article,
@@ -39,8 +39,10 @@ impl ArticleState {
         let options = Self::parse_options();
 
         let mdast = markdown::to_mdast(&markdown, &options).unwrap();
+
         self.article = Article::new(mdast);
-        self.content_html = self.article.content_html();
+        self.content_html = self.article.content_html(true);
+        self.index_html = self.article.index_html();
     }
 
     fn parse_options() -> ParseOptions {

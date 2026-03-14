@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-arborium = {version = "2.14.0", features = ["all-languages"]} # code syntax highlighting
+arborium = {version = "2.14.0", features = ["lang-rust"]} # code syntax highlighting
 axum = "0.8.8" # http server
 build_html = "2.7.0" 
+clap = { version = "4.6.0", features = ["derive"] }
+
 futures-util = "0.3.32"
 markdown = "1.0.0" # parsing markdown file into mdast
 notify = "8.2.0" # file watching
@@ -14,5 +16,10 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 tokio = { version = "1.49.0", features = ["full", "tracing"] }
 tokio-tungstenite = "0.28.0" # websocket support
+toml = "1.0.6"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
+
+
+[profile.release]
+debug = true # for flamegraph

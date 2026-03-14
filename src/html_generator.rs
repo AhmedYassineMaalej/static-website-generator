@@ -5,16 +5,17 @@ use markdown::{
 };
 
 use crate::{
-    highlight::Highlighter,
-    text_extractor::TextExtractor,
-    visitor::{MarkdownNode, MarkdownVisitor},
+    extractor::Extractor, highlight::Highlighter, markdown_node::MarkdownNode,
+    markdown_visitor::MarkdownVisitor, text_extractor::TextExtractor,
 };
 
-pub struct HtmlGenerator {}
+pub struct HtmlGenerator {
+    debug_positions: bool,
+}
 
 impl HtmlGenerator {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(debug_positions: bool) -> Self {
+        Self { debug_positions }
     }
 
     pub fn generate_html(mut self, node: &Node) -> String {
@@ -45,7 +46,7 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         };
 
         let mut element = HtmlElement::new(tag);
-        let heading_text = TextExtractor::extract_text(heading);
+        let heading_text = TextExtractor::extract(heading);
         element.add_attribute("id", heading_text.replace(' ', "-"));
 
         for node in &heading.children {
@@ -91,7 +92,7 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
     }
 
     fn visit_toml(&mut self, _toml: &markdown::mdast::Toml) -> HtmlChild {
-        todo!()
+        "".into()
     }
 
     fn visit_yaml(&mut self, yaml: &markdown::mdast::Yaml) -> HtmlChild {
@@ -143,8 +144,12 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         todo!()
     }
 
-    fn visit_image(&mut self, _image: &markdown::mdast::Image) -> HtmlChild {
-        todo!()
+    fn visit_image(&mut self, image: &markdown::mdast::Image) -> HtmlChild {
+        let mut element = HtmlElement::new(HtmlTag::Image);
+        element.add_attribute("alt", &image.alt);
+        element.add_attribute("src", &image.url);
+
+        element.into()
     }
 
     fn visit_image_reference(
@@ -164,6 +169,7 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
     fn visit_link(&mut self, link: &markdown::mdast::Link) -> HtmlChild {
         let mut element = HtmlElement::new(HtmlTag::Link);
         element.add_attribute("href", &link.url);
+        element.add_attribute("target", "_blank");
         for child in &link.children {
             element.add_child(self.visit_node(child));
         }
@@ -183,6 +189,10 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
     }
 
     fn visit_text(&mut self, text: &markdown::mdast::Text) -> HtmlChild {
+        if !self.debug_positions {
+            return text.value.clone().into();
+        }
+
         let Point { line, column, .. } = text.position.clone().unwrap().start;
         let mut html = String::new();
         let text = &text.value;
@@ -260,55 +270,7 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
 
     fn visit_node(&mut self, node: &Node) -> HtmlChild {
         // TODO: replace all this with node.accept(...)
-        let element = match node {
-            Node::Root(root) => self.visit_root(root),
-            Node::Blockquote(blockquote) => self.visit_blockquote(blockquote),
-            Node::FootnoteDefinition(footnote_definition) => {
-                self.visit_footnote_definition(footnote_definition)
-            }
-            Node::MdxJsxFlowElement(mdx_jsx_flow_element) => {
-                self.visit_mdx_jsx_flow_element(mdx_jsx_flow_element)
-            }
-            Node::List(list) => self.visit_list(list),
-            Node::MdxjsEsm(mdxjs_esm) => self.visit_mdxjs_esm(mdxjs_esm),
-            Node::Toml(toml) => self.visit_toml(toml),
-            Node::Yaml(yaml) => self.visit_yaml(yaml),
-            Node::Break(break_) => self.visit_break(break_),
-            Node::InlineCode(inline_code) => self.visit_inline_code(inline_code),
-            Node::InlineMath(inline_math) => self.visit_inline_math(inline_math),
-            Node::Delete(delete) => self.visit_delete(delete),
-            Node::Emphasis(emphasis) => self.visit_emphasis(emphasis),
-            Node::MdxTextExpression(mdx_text_expression) => {
-                self.visit_mdx_text_expression(mdx_text_expression)
-            }
-            Node::FootnoteReference(footnote_reference) => {
-                self.visit_footnote_reference(footnote_reference)
-            }
-            Node::Html(html) => self.visit_html(html),
-            Node::Image(image) => self.visit_image(image),
-            Node::ImageReference(image_reference) => self.visit_image_reference(image_reference),
-            Node::MdxJsxTextElement(mdx_jsx_text_element) => {
-                self.visit_mdx_jsx_text_element(mdx_jsx_text_element)
-            }
-            Node::Link(link) => self.visit_link(link),
-            Node::LinkReference(link_reference) => self.visit_link_reference(link_reference),
-            Node::Strong(strong) => self.visit_strong(strong),
-            Node::Text(text) => self.visit_text(text),
-            Node::Code(code) => self.visit_code(code),
-            Node::Math(math) => self.visit_math(math),
-            Node::MdxFlowExpression(mdx_flow_expression) => {
-                self.visit_mdx_flow_expression(mdx_flow_expression)
-            }
-            Node::Heading(heading) => heading.accept(self),
-            Node::Table(table) => self.visit_table(table),
-            Node::ThematicBreak(thematic_break) => self.visit_thematic_break(thematic_break),
-            Node::TableRow(table_row) => self.visit_table_row(table_row),
-            Node::TableCell(table_cell) => self.visit_table_cell(table_cell),
-            Node::ListItem(list_item) => self.visit_list_item(list_item),
-            Node::Definition(definition) => self.visit_definition(definition),
-            Node::Paragraph(paragraph) => self.visit_paragraph(paragraph),
-        };
-
+        let element = node.accept(self);
         let Some(position) = node.position() else {
             return element;
         };

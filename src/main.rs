@@ -3,56 +3,89 @@
 mod app_state;
 mod article;
 mod article_state;
+mod compile;
 mod config;
 mod connection;
-mod file_contents;
+mod extractor;
 mod highlight;
 mod html_generator;
+mod image_extractors;
 mod index_extractor;
+mod markdown_node;
+mod markdown_visitor;
+mod metadata_extractor;
+pub mod router;
 mod server;
 mod text_extractor;
-mod visitor;
 mod watcher;
 
 use axum::Router;
-use axum::extract::State;
-use axum::http::{HeaderMap, HeaderValue, header};
-use axum::response::{Html, IntoResponse};
-use axum::routing::get;
+use clap::{Parser, Subcommand};
 use futures_util::StreamExt;
-use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::{RwLock, broadcast};
+use tokio::sync::broadcast;
 use tokio_tungstenite::accept_async;
 use tracing::info;
 
-use crate::app_state::ProjectState;
-use crate::article_state::ArticleState;
-use crate::config::{Config, ProjectDirectories};
+use crate::app_state::{ProjectState, Template};
+use crate::compile::compile_articles;
+use crate::config::WatcherConfig;
 use crate::connection::{ListenerConnection, UpdaterConnection};
+use crate::router::get_router;
 use crate::server::Server;
 use crate::watcher::FileWatcher;
 
-const ARTICLES_DIR: &str = "article/";
+const ARTICLES_DIR: &str = "articles/";
 const TEMPLATE_DIR: &str = "template/";
-const PUBLIC_DIR: &str = "public/";
+const OUTPUT_DIR: &str = "public/";
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Builds the articles into target directory
+    Build,
+    /// Launches server for hot reloading
+    Dev {
+        /// Path to the article to serve
+        article: PathBuf,
+    },
+}
 
 #[tokio::main]
 async fn main() {
+    let cli = Cli::parse();
+
+    let article = match cli.command {
+        Commands::Build => {
+            let template = Template::from_directory(&PathBuf::from(TEMPLATE_DIR)).await;
+            compile_articles(
+                &PathBuf::from(ARTICLES_DIR),
+                &PathBuf::from(OUTPUT_DIR),
+                &template,
+            )
+            .await;
+
+            return;
+        }
+        Commands::Dev { article } => article,
+    };
+
     let subscriber = tracing_subscriber::fmt().finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    let config = Config::new(ProjectDirectories::new(
-        &PathBuf::from(ARTICLES_DIR),
-        &PathBuf::from(PUBLIC_DIR),
-        &PathBuf::from(TEMPLATE_DIR),
-    ));
+    let config = WatcherConfig::new(&article, &PathBuf::from(TEMPLATE_DIR));
 
     let (update_sender, _rx) = broadcast::channel(10);
 
-    let watcher = FileWatcher::new(config.directories.clone());
+    let watcher = FileWatcher::new(config.clone());
     info!("file watcher is ready");
 
     let state = Arc::new(ProjectState::new(config).await);
@@ -64,11 +97,7 @@ async fn main() {
 
     let cloned_state = state.clone();
     let server_thread = tokio::spawn(async {
-        let app = Router::new()
-            .route("/", get(root))
-            .route("/script.js", get(script))
-            .route("/styles.css", get(css))
-            .with_state(cloned_state);
+        let app = Router::new().merge(get_router(cloned_state));
 
         let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
         info!("server listening on http://localhost:3000");
@@ -102,50 +131,4 @@ async fn main() {
     child.wait().await.unwrap();
 
     server_thread.await.unwrap();
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-#[serde(rename_all = "lowercase")]
-pub enum Update {
-    Markdown { content: String, index: String },
-    Html, // dont need to send anything as page will just reload
-    Css { css: String },
-    Javascript,
-}
-
-#[derive(Debug, Serialize, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum UpdateEvent {
-    Markdown,
-    Html,
-    Css,
-    Javascript,
-}
-
-#[derive(Clone, Debug)]
-pub enum ClientEvent {
-    SendArticle(Arc<RwLock<ArticleState>>),
-    SendCss(String),
-    Reload,
-}
-
-async fn root(State(state): State<Arc<ProjectState>>) -> impl IntoResponse {
-    Html(state.template.get_html().await)
-}
-
-async fn script(State(state): State<Arc<ProjectState>>) -> impl IntoResponse {
-    let javascript = state.template.get_javascript().await;
-
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        header::CONTENT_TYPE,
-        HeaderValue::from_static("text/javascript"),
-    );
-
-    (headers, javascript)
-}
-
-async fn css(State(state): State<Arc<ProjectState>>) -> impl IntoResponse {
-    state.template.get_css().await
 }

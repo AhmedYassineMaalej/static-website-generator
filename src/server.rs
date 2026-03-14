@@ -8,7 +8,9 @@ use tokio::{
     task,
 };
 
-use crate::{ClientEvent, UpdateEvent, app_state::ProjectState};
+use crate::app_state::ProjectState;
+use crate::config::UpdateEvent;
+use crate::connection::ClientEvent;
 
 pub struct Server {
     state: Arc<ProjectState>,
@@ -85,6 +87,12 @@ impl Server {
 
     async fn broadcoast_css(&self) {
         let css = self.state.template.get_css().await;
+        let css = css
+            + "
+span.word:hover {
+    color: darkorange;
+}
+";
         self.broadcast_sender
             .send(ClientEvent::SendCss(css))
             .expect("failed to send css");
