@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use markdown::mdast::{Heading, Root};
 
-use crate::{
-    extractor::Extractor, markdown_visitor::MarkdownVisitor,
-};
+use crate::{extractor::Extractor, markdown_visitor::MarkdownVisitor};
 
 #[derive(Debug)]
 pub enum ArticleImage {
@@ -36,7 +34,7 @@ impl MarkdownVisitor<()> for ImageExtractor {
         }
     }
 
-    fn visit_blockquote(&mut self, _blockquote: &markdown::mdast::Blockquote) -> () {
+    fn visit_blockquote(&mut self, _blockquote: &markdown::mdast::Blockquote) {
         todo!()
     }
 
@@ -54,9 +52,7 @@ impl MarkdownVisitor<()> for ImageExtractor {
         todo!()
     }
 
-    fn visit_list(&mut self, _list: &markdown::mdast::List) -> () {
-        todo!()
-    }
+    fn visit_list(&mut self, _list: &markdown::mdast::List) {}
 
     fn visit_mdxjs_esm(&mut self, _mdxjs_esm: &markdown::mdast::MdxjsEsm) -> () {
         todo!()

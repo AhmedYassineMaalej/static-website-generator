@@ -1,4 +1,7 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+};
 
 use futures_util::{
     SinkExt, StreamExt,
@@ -7,18 +10,21 @@ use futures_util::{
 use serde::Serialize;
 use tokio::{
     net::TcpStream,
-    sync::{RwLock, broadcast, mpsc::UnboundedSender},
+    sync::{
+        RwLock, broadcast,
+        mpsc::{UnboundedSender, unbounded_channel},
+    },
     task::JoinHandle,
 };
 use tokio_tungstenite::{
     WebSocketStream,
     tungstenite::{Error, Message},
 };
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     article_state::ArticleState,
-    server::{ConnectionEvent, ServerEvent},
+    server::{ConnectionEvent, NewConnectionEvent, ServerEvent},
 };
 
 #[derive(Debug, Serialize)]
@@ -35,9 +41,9 @@ pub enum Update {
     Css {
         css: String,
     },
-    Javascript,
 }
 
+/// events that are _sent_ to the user
 #[derive(Clone, Debug)]
 pub enum ClientEvent {
     SendArticle(Arc<RwLock<ArticleState>>),
@@ -48,32 +54,58 @@ pub enum ClientEvent {
 pub struct UpdaterConnection {
     socket: SplitSink<WebSocketStream<TcpStream>, Message>,
     addr: SocketAddr,
-    event_rx: broadcast::Receiver<ClientEvent>,
-    server_handle: UnboundedSender<ServerEvent>,
 }
 
 pub struct ListenerConnection {
     socket: SplitStream<WebSocketStream<TcpStream>>,
+    server: UnboundedSender<ServerEvent>,
+    addr: SocketAddr,
 }
 
 impl ListenerConnection {
-    pub fn new(socket: SplitStream<WebSocketStream<TcpStream>>) -> Self {
-        Self { socket }
+    pub fn new(
+        socket: SplitStream<WebSocketStream<TcpStream>>,
+        addr: SocketAddr,
+        server: UnboundedSender<ServerEvent>,
+    ) -> Self {
+        Self {
+            socket,
+            server,
+            addr,
+        }
     }
 
     pub fn run(mut self) -> JoinHandle<()> {
         tokio::spawn(async move {
             while let Some(Ok(msg)) = self.socket.next().await {
-                info!("received message: {msg:?}");
+                if let Message::Close(_) = msg {
+                    info!("client closed connection");
+                    self.server
+                        .send(ServerEvent::ConnectionEvent(ConnectionEvent::Close(
+                            self.addr,
+                        )))
+                        .unwrap();
+
+                    continue;
+                }
+
                 if let Message::Text(text) = msg {
                     let text = text.to_string();
-                    let (line, offset) = text.split_once(':').unwrap();
+                    let Some((line, offset)) = text.split_once(':') else {
+                        warn!("received invalid text: {text}");
+                        continue;
+                    };
+
                     // nvim --server /tmp/nv.sock --remote-send '<ESC>50G10|'
                     let arg = format!("<ESC>{line}G{offset}|");
                     let mut command = tokio::process::Command::new("nvim");
                     command.args(["--server", "/tmp/nv.sock", "--remote-send", arg.as_str()]);
 
-                    let mut child = command.spawn().unwrap();
+                    let Ok(mut child) = command.spawn() else {
+                        warn!("failed to execute nvim command");
+                        continue;
+                    };
+
                     child.wait().await.unwrap();
                 }
             }
@@ -82,18 +114,8 @@ impl ListenerConnection {
 }
 
 impl UpdaterConnection {
-    pub fn new(
-        socket: SplitSink<WebSocketStream<TcpStream>, Message>,
-        addr: SocketAddr,
-        event_rx: broadcast::Receiver<ClientEvent>,
-        server_handle: UnboundedSender<ServerEvent>,
-    ) -> Self {
-        Self {
-            socket,
-            addr,
-            event_rx,
-            server_handle,
-        }
+    pub fn new(socket: SplitSink<WebSocketStream<TcpStream>, Message>, addr: SocketAddr) -> Self {
+        Self { socket, addr }
     }
 
     pub async fn send_event(&mut self, event: ClientEvent) -> Result<(), Error> {
@@ -116,14 +138,15 @@ impl UpdaterConnection {
             .await
     }
 
-    pub fn run(mut self) -> JoinHandle<()> {
-        tokio::spawn(async move {
-            info!("client connected on {}", self.addr);
-            self.server_handle
-                .send(ServerEvent::ConnectionEvent(ConnectionEvent::NewConnection))
-                .unwrap();
+    #[must_use]
+    pub fn run(mut self) -> (JoinHandle<()>, UnboundedSender<ClientEvent>) {
+        let (event_tx, mut event_rx) = unbounded_channel();
 
-            while let Ok(event) = self.event_rx.recv().await {
+        let event_tx2 = event_tx.clone();
+        let task = tokio::spawn(async move {
+            info!("client connected on {}", self.addr);
+
+            while let Some(event) = event_rx.recv().await {
                 let content_type = match event {
                     ClientEvent::SendArticle(_) => "article",
                     ClientEvent::SendCss(_) => "css",
@@ -144,6 +167,8 @@ impl UpdaterConnection {
                     }
                 }
             }
-        })
+        });
+
+        (task, event_tx)
     }
 }

@@ -18,6 +18,10 @@ p {
     overflow-wrap: anywhere;
 }
 
+li p {
+    text-indent: 0;
+}
+
 span.word {
     white-space: nowrap;
 }
@@ -152,6 +156,18 @@ body {
     margin: 0em;
 }
 
+a {
+    background-image: linear-gradient(currentColor 0 0);
+    background-position: bottom left;
+    background-repeat: no-repeat;
+    background-size: var(--underline-width, 0%) 0.1em;
+    transition: background-size 0.25s;
+    text-decoration: none;
+}
+
+a:hover {
+    --underline-width: 100%;
+}
 
 
 .index>a {
@@ -159,24 +175,15 @@ body {
     display: block;
     color: black;
     text-decoration: none;
-    padding: 0.2em;
-    border: 3px solid transparent;
-    border-radius: 6px;
+    margin: 0.2em;
     width: fit-content;
 }
-
 
 
 .index>a:visited {
     color: black;
 }
 
-.index>a:hover {
-    background: rgb(from white r g b / 20%);
-    border: 3px solid black;
-    border-radius: 6px;
-    box-shadow: 5px 5px black;
-}
 
 pre {
     background: var(--theme-bg);

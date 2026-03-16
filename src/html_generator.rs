@@ -83,8 +83,20 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         todo!()
     }
 
-    fn visit_list(&mut self, _list: &markdown::mdast::List) -> HtmlChild {
-        todo!()
+    fn visit_list(&mut self, list: &markdown::mdast::List) -> HtmlChild {
+        let tag = if list.ordered {
+            HtmlTag::OrderedList
+        } else {
+            HtmlTag::UnorderedList
+        };
+
+        let mut element = HtmlElement::new(tag);
+
+        for node in &list.children {
+            element.add_child(self.visit_node(node));
+        }
+
+        element.into()
     }
 
     fn visit_mdxjs_esm(&mut self, _mdxjs_esm: &markdown::mdast::MdxjsEsm) -> HtmlChild {
@@ -194,9 +206,11 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         }
 
         let Point { line, column, .. } = text.position.clone().unwrap().start;
-        let mut html = String::new();
         let text = &text.value;
         let mut offset = 0;
+
+        let mut spans = Vec::new();
+
         for word in text.split(' ') {
             let mut word_span = HtmlElement::new(HtmlTag::Span);
             word_span.add_attribute("class", "word");
@@ -210,12 +224,12 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
                 word_span.add_child(HtmlChild::Element(char_span));
                 offset += 1;
             }
-            html += &word_span.to_string();
-            html += "&nbsp;";
+
+            spans.push(word_span.to_string());
             offset += 1;
         }
 
-        html.into()
+        spans.join("&nbsp;").into()
     }
 
     fn visit_code(&mut self, code: &markdown::mdast::Code) -> HtmlChild {
@@ -260,8 +274,14 @@ impl MarkdownVisitor<HtmlChild> for HtmlGenerator {
         todo!()
     }
 
-    fn visit_list_item(&mut self, _list_item: &markdown::mdast::ListItem) -> HtmlChild {
-        todo!()
+    fn visit_list_item(&mut self, list_item: &markdown::mdast::ListItem) -> HtmlChild {
+        let mut element = HtmlElement::new(HtmlTag::ListElement);
+
+        for child in &list_item.children {
+            element.add_child(self.visit_node(child));
+        }
+
+        element.into()
     }
 
     fn visit_definition(&mut self, _definition: &markdown::mdast::Definition) -> HtmlChild {

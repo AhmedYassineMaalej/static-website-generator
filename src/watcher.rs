@@ -54,7 +54,7 @@ impl FileWatcher {
             };
 
             for path in paths.into_iter().flat_map(|p| p.canonicalize()) {
-                info!("change detected at {:?}", std::time::Instant::now());
+                info!("change detected");
                 if let Some(update) = self.config.process_change(&path) {
                     server_handle.send(ServerEvent::Update(update)).unwrap();
                 }

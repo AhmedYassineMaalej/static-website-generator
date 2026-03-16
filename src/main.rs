@@ -25,7 +25,6 @@ use futures_util::StreamExt;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
 use tokio_tungstenite::accept_async;
 use tracing::info;
 
@@ -34,12 +33,15 @@ use crate::compile::compile_articles;
 use crate::config::WatcherConfig;
 use crate::connection::{ListenerConnection, UpdaterConnection};
 use crate::router::get_router;
-use crate::server::Server;
+use crate::server::{ConnectionEvent, NewConnectionEvent, Server, ServerEvent};
 use crate::watcher::FileWatcher;
 
 const ARTICLES_DIR: &str = "articles/";
 const TEMPLATE_DIR: &str = "template/";
 const OUTPUT_DIR: &str = "public/";
+
+const HTTP_ADDR: &str = "0.0.0.0:3000";
+const WEBSOCKET_ADDR: &str = "127.0.0.1:9001";
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -54,7 +56,7 @@ enum Commands {
     Build,
     /// Launches server for hot reloading
     Dev {
-        /// Path to the article to serve
+        /// Path to the article to preview
         article: PathBuf,
     },
 }
@@ -78,48 +80,49 @@ async fn main() {
         Commands::Dev { article } => article,
     };
 
-    let subscriber = tracing_subscriber::fmt().finish();
+    let subscriber = tracing_subscriber::fmt().with_line_number(true).finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
     let config = WatcherConfig::new(&article, &PathBuf::from(TEMPLATE_DIR));
-
-    let (update_sender, _rx) = broadcast::channel(10);
 
     let watcher = FileWatcher::new(config.clone());
     info!("file watcher is ready");
 
     let state = Arc::new(ProjectState::new(config).await);
-    let server = Server::new(state.clone(), update_sender.clone());
+    let server = Server::new(state.clone());
     let (_server_task, server_handle) = server.run();
 
     tokio::spawn(watcher.watch(server_handle.clone()));
     info!("started watching files");
 
     let cloned_state = state.clone();
-    let server_thread = tokio::spawn(async {
+    let http_server_task = tokio::spawn(async {
         let app = Router::new().merge(get_router(cloned_state));
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+        let listener = tokio::net::TcpListener::bind(HTTP_ADDR).await.unwrap();
         info!("server listening on http://localhost:3000");
         axum::serve(listener, app).await.unwrap();
     });
 
     tokio::spawn(async move {
-        let listener = TcpListener::bind("127.0.0.1:9001").await.unwrap();
+        let listener = TcpListener::bind(WEBSOCKET_ADDR).await.unwrap();
         while let Ok((stream, addr)) = listener.accept().await {
             let websocket = accept_async(stream).await.unwrap();
             let (ws_write, ws_read) = websocket.split();
+            let updater = UpdaterConnection::new(ws_write, addr);
+            let listener = ListenerConnection::new(ws_read, addr, server_handle.clone());
 
-            let updater = UpdaterConnection::new(
-                ws_write,
-                addr,
-                update_sender.subscribe(),
-                server_handle.clone(),
-            );
-            let listener = ListenerConnection::new(ws_read);
+            let (_updater_task, updater_handle) = updater.run();
+            let _listener_taks = listener.run();
 
-            let _updater_task = updater.run();
-            let _listener_task = listener.run();
+            server_handle
+                .send(ServerEvent::ConnectionEvent(ConnectionEvent::Open(
+                    NewConnectionEvent {
+                        sender: updater_handle,
+                        addr,
+                    },
+                )))
+                .unwrap();
         }
     });
 
@@ -130,5 +133,5 @@ async fn main() {
 
     child.wait().await.unwrap();
 
-    server_thread.await.unwrap();
+    http_server_task.await.unwrap();
 }

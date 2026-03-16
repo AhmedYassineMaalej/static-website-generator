@@ -1,10 +1,7 @@
-use std::sync::Arc;
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
 use tokio::{
-    sync::{
-        broadcast,
-        mpsc::{UnboundedSender, unbounded_channel},
-    },
+    sync::mpsc::{UnboundedSender, unbounded_channel},
     task,
 };
 
@@ -14,7 +11,7 @@ use crate::connection::ClientEvent;
 
 pub struct Server {
     state: Arc<ProjectState>,
-    broadcast_sender: broadcast::Sender<ClientEvent>,
+    broadcast_list: HashMap<SocketAddr, UnboundedSender<ClientEvent>>,
 }
 
 pub enum ServerEvent {
@@ -23,18 +20,24 @@ pub enum ServerEvent {
 }
 
 pub enum ConnectionEvent {
-    NewConnection,
+    Open(NewConnectionEvent),
+    Close(SocketAddr),
+}
+
+pub struct NewConnectionEvent {
+    pub addr: SocketAddr,
+    pub sender: UnboundedSender<ClientEvent>,
 }
 
 impl Server {
-    pub fn new(state: Arc<ProjectState>, broadcast_sender: broadcast::Sender<ClientEvent>) -> Self {
+    pub fn new(state: Arc<ProjectState>) -> Self {
         Self {
             state,
-            broadcast_sender,
+            broadcast_list: HashMap::new(),
         }
     }
 
-    pub fn run(self) -> (task::JoinHandle<()>, UnboundedSender<ServerEvent>) {
+    pub fn run(mut self) -> (task::JoinHandle<()>, UnboundedSender<ServerEvent>) {
         let (handle, mut receiver) = unbounded_channel();
         let task = tokio::spawn(async move {
             while let Some(event) = receiver.recv().await {
@@ -45,7 +48,7 @@ impl Server {
         (task, handle)
     }
 
-    async fn handle_event(&self, event: ServerEvent) {
+    async fn handle_event(&mut self, event: ServerEvent) {
         match event {
             ServerEvent::ConnectionEvent(conn_event) => self.handle_connection(conn_event).await,
             ServerEvent::Update(update_event) => self.handle_update(update_event).await,
@@ -56,13 +59,13 @@ impl Server {
         match event {
             UpdateEvent::Markdown => {
                 self.state.update_markdown().await;
-                self.broadcoast_article();
+                self.broadcast_article();
             }
             UpdateEvent::Html => {
-                self.broadcoast_html();
+                self.broadcast(&ClientEvent::Reload);
             }
             UpdateEvent::Css => {
-                self.broadcoast_css().await;
+                self.broadcast_css().await;
             }
             UpdateEvent::Javascript => {
                 // nothing for now
@@ -70,38 +73,54 @@ impl Server {
         }
     }
 
-    async fn handle_connection(&self, event: ConnectionEvent) {
+    async fn handle_connection(&mut self, event: ConnectionEvent) {
         match event {
-            ConnectionEvent::NewConnection => {
-                self.broadcoast_article();
-                self.broadcoast_css().await;
+            ConnectionEvent::Open(connection) => {
+                let article = self.state.article.clone();
+                let css = self.get_css().await;
+
+                connection
+                    .sender
+                    .send(ClientEvent::SendArticle(article))
+                    .unwrap();
+
+                connection.sender.send(ClientEvent::SendCss(css)).unwrap();
+
+                self.broadcast_list
+                    .insert(connection.addr, connection.sender);
+                // self.broadcast_article();
+                // self.broadcast_css().await;
+            }
+            ConnectionEvent::Close(ip_addr) => {
+                self.broadcast_list.remove(&ip_addr);
             }
         }
     }
 
-    fn broadcoast_html(&self) {
-        self.broadcast_sender
-            .send(ClientEvent::Reload)
-            .expect("failed to send html");
+    fn broadcast(&self, message: &ClientEvent) {
+        for connection in self.broadcast_list.values() {
+            connection
+                .send(message.clone())
+                .expect("failed to send message");
+        }
     }
 
-    async fn broadcoast_css(&self) {
+    async fn broadcast_css(&self) {
+        let css = self.get_css().await;
+        self.broadcast(&ClientEvent::SendCss(css));
+    }
+
+    fn broadcast_article(&self) {
+        let article = self.state.article.clone();
+        self.broadcast(&ClientEvent::SendArticle(article));
+    }
+
+    async fn get_css(&self) -> String {
         let css = self.state.template.get_css().await;
-        let css = css
-            + "
+        css + "
 span.word:hover {
     color: darkorange;
 }
-";
-        self.broadcast_sender
-            .send(ClientEvent::SendCss(css))
-            .expect("failed to send css");
-    }
-
-    fn broadcoast_article(&self) {
-        let article = self.state.article.clone();
-        self.broadcast_sender
-            .send(ClientEvent::SendArticle(article))
-            .expect("failed to send article");
+"
     }
 }
